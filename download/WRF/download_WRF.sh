@@ -30,4 +30,5 @@ PATH_TO_DATA="s3://wrf-se-ak-ar5/ccsm/rcp85/daily/${YEAR}/"
 INPUT_FNAME="${PATH_TO_DATA}WRFDS_${YEAR}-${MONTH}-${DAY}.nc"
 OUTPUT_FNAME="${PATH_TO_OUT}WRFDS_${YEAR}-${MONTH}-${DAY}.nc"
 # echo ${OUTPUT_FNAME}
+echo ${INPUT_FNAME}
 /expanse/nfs/cw3e/cwp140/aws/local/bin/aws s3 cp --region us-west-2 ${INPUT_FNAME} ${OUTPUT_FNAME} --no-sign-request

@@ -1,41 +1,31 @@
 ######################################################################
 # Filename:    create_job_configs.py
 # Author:      Deanna Nash dnash@ucsd.edu
-# Description: Script to create .yaml configuration file to run job_array with slurm for downloading GEFSv12 Reforecast Data
+# Description: Script to create .yaml configuration file to run job_array with slurm for preprocessing WRF Data
 #
 ######################################################################
 
 ## import libraries
 import pandas as pd
+from datetime import timedelta
 import numpy as np
 import yaml
 from itertools import chain
 
-yr_start = 2030
-yr_end = 2060
+start_year = 2030
+end_year = 2060
 
-## create list of dates to download in parallel
-start_date = pd.to_datetime('{0}-01-01'.format(yr_start))
-end_date = pd.to_datetime('{0}-12-31'.format(yr_end))
-
-## make a list of dates between start_date and end_date
-date_lst = pd.date_range(start_date, end_date, freq='1M')
-			
 jobcounter = 0
 filecounter = 0
 ## loop through to create dictionary for each job
 d_lst = []
 dest_lst = []
 njob_lst = []
-for i, date in enumerate(date_lst):
-    yr = date.strftime("%Y")
-    month = date.strftime("%m")
-    
+for i, yr in enumerate(np.arange(start_year, end_year+1, 1)):
     jobcounter += 1
     d = {'job_{0}'.format(jobcounter):
-         {'year': yr,
-          'month': month,
-          }}
+         {'year': str(yr),
+          'varname': 'ivt'}}
     d_lst.append(d)
     
     if (jobcounter == 999):
@@ -67,7 +57,7 @@ file.close()
 for i, njobs in enumerate(njob_lst):
     call_str_lst = []
     for j, job in enumerate(range(1, njobs+1, 1)):
-        call_string = "python getWRF_batch.py config_{0}.yaml 'job_{1}'".format(i+1, j+1)
+        call_string = "python preprocess_WRF.py config_{0}.yaml 'job_{1}'".format(i+1, j+1)
         call_str_lst.append(call_string)
         
     ## now write those lines to a text file

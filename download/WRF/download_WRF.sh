@@ -11,24 +11,28 @@
 YEAR=$1
 MONTH=$2
 DAY=$3
+MODEL=$4
 
-# ### FOR CFSR REANALYSIS
-# ### Set up paths
-# PATH_TO_OUT="/expanse/lustre/scratch/dnash/temp_project/downloaded/WRF/"
-# PATH_TO_DATA="s3://wrf-se-ak-ar5/cfsr/4km/daily/${YEAR}/"
+### Directory to save data in
+PATH_TO_OUT="/cw3e/mead/projects/cwp140/data/downloads/SEAK-WRF/${MODEL}/"
 
-# INPUT_FNAME="${PATH_TO_DATA}WRFDS_${YEAR}-${MONTH}-${DAY}.nc"
-# OUTPUT_FNAME="${PATH_TO_OUT}WRFDS_${YEAR}-${MONTH}-${DAY}.nc"
-# # echo ${OUTPUT_FNAME}
-# /expanse/nfs/cw3e/cwp140/aws/local/bin/aws s3 cp --region us-west-2 ${INPUT_FNAME} ${OUTPUT_FNAME} --no-sign-request
-
-### FOR CCSM RCP85 REANALYSIS
-### Set up paths
-PATH_TO_OUT="/expanse/lustre/scratch/dnash/temp_project/downloaded/WRF/"
-PATH_TO_DATA="s3://wrf-se-ak-ar5/ccsm/rcp85/daily/${YEAR}/"
+case "$MODEL" in
+  ccsm|gfdl)
+    ### FOR CCSM OR GFDL RCP85 REANALYSIS
+    PATH_TO_DATA="s3://wrf-se-ak-ar5/${MODEL}/rcp85/daily/${YEAR}/"
+    ;;
+  cfsr)
+    ### FOR CFSR 4 km
+    PATH_TO_DATA="s3://wrf-se-ak-ar5/${MODEL}/4km/daily/${YEAR}/"
+    ;;
+  *)
+    echo "Unknown model: $MODEL"
+    exit 1
+    ;;
+esac
 
 INPUT_FNAME="${PATH_TO_DATA}WRFDS_${YEAR}-${MONTH}-${DAY}.nc"
 OUTPUT_FNAME="${PATH_TO_OUT}WRFDS_${YEAR}-${MONTH}-${DAY}.nc"
 # echo ${OUTPUT_FNAME}
 echo ${INPUT_FNAME}
-/expanse/nfs/cw3e/cwp140/aws/local/bin/aws s3 cp --region us-west-2 ${INPUT_FNAME} ${OUTPUT_FNAME} --no-sign-request
+/cw3e/mead/projects/cwp140/aws/local/bin/aws s3 cp --region us-west-2 ${INPUT_FNAME} ${OUTPUT_FNAME} --no-sign-request

@@ -18,6 +18,7 @@ ddict = config[config_name]
 
 year = ddict['year']
 month = ddict['month']
+model = ddict['model']
 
 ## loop through days here
 def get_days_in_month(year, month):
@@ -30,5 +31,5 @@ day_lst = get_days_in_month(year, month)
 for i, day in enumerate(day_lst):
     day = str(day).zfill(2)
     ## run download_WRF.sh to download data 
-    bash_script = "/home/dnash/repos/climate_change_SEAK/download/WRF/download_WRF.sh"
-    print(subprocess.run([bash_script, year, month, day]))
+    bash_script = "/cw3e/mead/projects/cwp140/repos/climate_change_SEAK/download/WRF/download_WRF.sh"
+    print(subprocess.run([bash_script, year, month, day, model]))

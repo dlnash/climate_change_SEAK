@@ -156,3 +156,98 @@ def draw_basemap(ax, datacrs=ccrs.PlateCarree(), extent=None, xticks=None, ytick
         ax.set_extent(extent, crs=datacrs)
     
     return ax
+
+def plot_trend_with_clim(ds, ds_clim, varname, lons, lats, model,
+                         lonmin=-141., lonmax=-130., latmin=54.5, latmax=60.,
+                         sig_level=0.1):
+    """
+    Generic plotting function for <varname>_trend and climatology.
+    Handles scalar fields (pcpt, freezing level, etc.) and vector fields (IVT, winds).
+    Produces a 2-column figure: climatology (left) and trend (right).
+    """
+    # --- Setup ---
+    mapcrs = ccrs.PlateCarree()
+    datacrs = ccrs.PlateCarree()
+    dx = np.arange(lonmin, lonmax+3, 3)
+    dy = np.arange(latmin, latmax+1, 1)
+
+    fig = plt.figure(figsize=(10, 3.))  # wider for two columns
+    fig.dpi = 300
+    fname = f'../figs/{model}_{varname}_clim_trend'
+    fmt = 'png'
+
+    nrows, ncols = 2, 2
+    gs = GridSpec(nrows, ncols,
+                  height_ratios=[1, 0.05],  # map row + colorbar row
+                  width_ratios=[1, 1],      # climatology + trend
+                  wspace=0.15, hspace=0.05)
+
+    # === Left column: Climatology ===
+    ax0 = fig.add_subplot(gs[0, 0], projection=mapcrs)
+    ax0 = draw_basemap(ax0, extent=[lonmin, lonmax, latmin, latmax],
+                       xticks=dx, yticks=dy, left_lats=True,
+                       right_lats=False, bottom_lons=True)
+
+    cfield = ds_clim[varname].values
+    cflevs = np.linspace(np.nanmin(cfield), np.nanmax(cfield), 21)
+    cf0 = ax0.contourf(lons, lats, cfield, transform=datacrs,
+                       levels=cflevs, cmap=cmo.deep, extend='max')
+    ax0.set_title(f"{varname.upper()} Climatology")
+
+    # --- Colorbar for climatology ---
+    cbax0 = plt.subplot(gs[1, 0])
+    cb0 = Colorbar(ax=cbax0, mappable=cf0, orientation='horizontal', ticklocation='bottom')
+    cb0.set_label(fr'{varname.upper()} (climatology units)', fontsize=10)
+    cb0.ax.tick_params(labelsize=10)
+
+    # === Right column: Trend (with optional vectors) ===
+    ax1 = fig.add_subplot(gs[0, 1], projection=mapcrs)
+    ax1 = draw_basemap(ax1, extent=[lonmin, lonmax, latmin, latmax],
+                       xticks=dx, yticks=dy, left_lats=False,
+                       right_lats=False, bottom_lons=True)
+
+    if varname in ["ivt", "uv"]:
+        # IVT or winds (need u and v components)
+        if varname == "ivt":
+            ukey, vkey, pkey = "ivtu_trend", "ivtv_trend", "ivt_p"
+            ckey = "ivt_trend"
+        elif varname == "uv":
+            ukey, vkey, pkey = "u_trend", "v_trend", "uv_p"
+            ckey = "u_trend"  # or another scalar field
+
+        uvec = ds[ukey].where(ds[pkey] <= sig_level).values
+        vvec = ds[vkey].where(ds[pkey] <= sig_level).values
+
+        cflevs = np.arange(-0.3, 0.305, 0.05)
+        # cflevs = np.linspace(np.nanmin(ds[ckey].values), np.nanmax(ds[ckey].values), 0.05)
+        cf1 = ax1.contourf(lons, lats, ds[ckey].values, transform=datacrs,
+                           levels=cflevs, cmap='BrBG', extend='both')
+
+        Q = ax1.quiver(lons, lats, uvec, vvec, transform=datacrs,
+                       color='k', regrid_shape=13, pivot='middle',
+                       angles='xy', scale_units='xy', scale=1, units='xy')
+
+        ax1.quiverkey(Q, 0.1, -0.05, 1, '1 unit/day', labelpos='E',
+                      coordinates='axes', fontproperties={'size': 8.0})
+
+    else:
+        ckey = f"{varname}_trend"
+        pkey = f"{varname}_p"
+        field = ds[ckey].where(ds[pkey] <= sig_level).values
+
+        # cflevs = np.linspace(np.nanmin(field), np.nanmax(field), 0.05)
+        cflevs = np.arange(-0.3, 0.305, 0.05)
+        cf1 = ax1.contourf(lons, lats, field, transform=datacrs,
+                           levels=cflevs, cmap='BrBG', extend='both')
+
+    ax1.set_title(f"{varname.upper()} Trend")
+
+    # --- Colorbar for trend ---
+    cbax1 = plt.subplot(gs[1, 1])
+    cb1 = Colorbar(ax=cbax1, mappable=cf1, orientation='horizontal', ticklocation='bottom')
+    cb1.set_label(fr'$\Delta$ {varname.upper()} (trend units)', fontsize=10)
+    cb1.ax.tick_params(labelsize=10)
+
+    # Save
+    fig.savefig(f"{fname}.{fmt}", bbox_inches='tight', dpi=fig.dpi)
+    plt.show()

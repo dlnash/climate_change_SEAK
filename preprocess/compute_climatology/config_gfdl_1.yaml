@@ -1,0 +1,12 @@
+job_1:
+  model: gfdl
+  varname: ivt
+job_2:
+  model: gfdl
+  varname: pcpt
+job_3:
+  model: gfdl
+  varname: freezing_level
+job_4:
+  model: gfdl
+  varname: uv925

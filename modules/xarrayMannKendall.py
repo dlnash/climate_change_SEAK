@@ -21,7 +21,7 @@ class Mann_Kendall_test(object):
     DataArray : xarray.DataArray
         Dataset to analyse.
     dim : str
-        Coordiante name in which the linear trend will apply ('time').
+        Coordinate name in which the linear trend will apply ('time').
     alpha: float
         Significance level (default = 0.01)
     MK_modified: Boolean
@@ -158,7 +158,6 @@ class Mann_Kendall_test(object):
             slope,intercept = sstats.mstats.theilslopes(self.y, self.x, self.alpha)[0:2]
         else:
             raise ValueError('Define a method')
-        
         y_detrend = self.y - (self.x * slope + intercept)
         
         if self.MK_modified or effective_n:

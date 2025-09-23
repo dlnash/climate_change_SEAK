@@ -7,10 +7,10 @@
 #SBATCH -t 5:00:00 # Runtime in HH:MM:SS
 #SBATCH -o slurm_out/output_%a # File to which STDOUT will be written
 #SBATCH -e slurm_out/output_err%a # File to which STDERR will be written
-#SBATCH --job-name=preprocess_WRF
+#SBATCH --job-name=compute_climatology
 #SBATCH --mail-type=ALL # Type of email notification- BEGIN,END,FAIL,ALL
 #SBATCH --mail-user=dnash@ucsd.edu # Email to which notifications will be sent
-#SBATCH --array=1-160%100 # runs jobs x-y, 100 at a time
+#SBATCH --array=1-4%4 # runs jobs x-y, 100 at a time
 
 # Activate Anaconda work environment
 source /home/dnash/miniconda3/envs/SEAK-impacts/etc/conda/activate.d/*

@@ -1,0 +1,12 @@
+job_1:
+  model: ccsm
+  varname: ivt
+job_2:
+  model: ccsm
+  varname: pcpt
+job_3:
+  model: ccsm
+  varname: freezing_level
+job_4:
+  model: ccsm
+  varname: uv925

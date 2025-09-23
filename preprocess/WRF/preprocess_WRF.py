@@ -1,74 +1,83 @@
 """
 Filename:    preprocess_WRF.py
 Author:      Deanna Nash, dnash@ucsb.edu
-Description: preprocess daily variables from SEAK-WRF data and save as yearly nc files
+Description: Preprocess daily variables from SEAK-WRF data and save as yearly NetCDF files.
 """
 
-## Imports
-import os, sys
-import yaml
+# --- Imports ---
+import os
+import sys
 import glob
-import numpy as np
+import yaml
 import xarray as xr
-import shutil
 
-# Necessary to add cwd to path when script run
-# by SLURM (since it executes a copy)
+# Add cwd for SLURM execution (script runs from a copied location)
 sys.path.append(os.getcwd())
 
-# Path to modules
+# Path to custom modules
 sys.path.append('../../modules')
-# Import my modules
-from wrf_preprocess import preprocess_WRF_ivt
+import globalvars
+import wrf_preprocess as wrf_prep
 
-path_to_wrf = '/expanse/lustre/scratch/dnash/temp_project/downloaded/WRF/'
-path_to_out = '/expanse/lustre/scratch/dnash/temp_project/preprocessed/'
+def main(config_file: str, job_info: str):
+    """Main preprocessing workflow."""
 
-# command for selecting variables **include XTIME,XLONG,XLAT in var list
-# ncks -v varname1,varname2 input_file output_file
+    # --- Load configuration ---
+    with open(config_file, "r") as f:
+        config = yaml.safe_load(f)
 
-### Input ###
-### Variable to Process ###
-config_file = str(sys.argv[1]) # this is the config file name
-job_info = str(sys.argv[2]) # this is the job name
+    ddict = config[job_info]
+    year = ddict["year"]
+    output_varname = ddict["varname"]
+    model = ddict["model"]
 
-config = yaml.load(open(config_file), Loader=yaml.SafeLoader) # read the file
-ddict = config[job_info] # pull the job info from the dict
+    # --- Define paths ---
+    path_to_data = globalvars.path_to_data
+    path_to_wrf = os.path.join(path_to_data, f"downloads/SEAK-WRF/{model}/")
+    path_to_out = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/{output_varname}/")
+    os.makedirs(path_to_out, exist_ok=True)
 
-year = ddict['year']
-output_varname = ddict['varname']
-model = 'CCSM'
+    # --- Collect input files ---
+    filenames = sorted(glob.glob(os.path.join(path_to_wrf, f"WRFDS_{year}*")))
+    if not filenames:
+        raise FileNotFoundError(f"No WRF files found for year {year} in {path_to_wrf}")
 
-# get list of filenames that contain data from that year from current year folder
-filenames = []
-for name in glob.glob(path_to_wrf + 'WRFDS_{0}*'.format(str(year))):
-    filenames.append(name)
-# sort filenames so they are in chronological order
-filenames = sorted(filenames)
+    # --- Map variables to preprocess functions ---
+    preprocess_map = {
+        "ivt": wrf_prep.preprocess_WRF_ivt,
+        "freezing_level": wrf_prep.preprocess_WRF_freezing_level,
+        "uv925": wrf_prep.preprocess_WRF_uv,
+        "pcpt": wrf_prep.preprocess_WRF_pcpt,
+    }
 
-ds_lst = []
-for i, wrfin in enumerate(filenames):
-    ds = xr.open_dataset(wrfin)
+    if output_varname not in preprocess_map:
+        raise ValueError(f"Unsupported variable: {output_varname}")
 
-    if output_varname == 'ivt':
-        ds = preprocess_WRF_ivt(ds, wrfin)
-        ds_lst.append(ds)
+    preprocess_func = preprocess_map[output_varname]
 
-new_ds = xr.concat(ds_lst, dim='Time')
+    # --- Process datasets ---
+    ds_list = []
+    for wrfin in filenames:
+        with xr.open_dataset(wrfin) as ds:
+            ds_proc = preprocess_func(ds, wrfin)
+            ds_list.append(ds_proc)
 
-## if XTIME is a variable still, drop it
-try:
-    new_ds = new_ds.drop_vars(["XTIME"])
-except:
-    pass
+    # --- Concatenate along time dimension ---
+    new_ds = xr.concat(ds_list, dim="Time")
 
-# write to netCDF
-print('Writing', output_varname, ' to netCDF')
-fname = os.path.join(path_to_out, 'SEAK-WRF/{2}/{0}/WRFDS_{0}_{1}.nc').format(output_varname, str(year), model)
-new_ds.to_netcdf(path=fname, mode = 'w', format='NETCDF4')
+    # Drop XTIME if present
+    new_ds = new_ds.drop_vars("XTIME", errors="ignore")
 
-### COPY FROM LUSTRE TO MAIN SPACE
-outname = '/expanse/nfs/cw3e/cwp140/preprocessed/SEAK-WRF/{0}/{1}/WRFDS_{1}_{2}.nc'.format(model, output_varname, str(year))
-print('Copying preprocessed data...')
-print('... {0} to {1}'.format(fname, outname))
-shutil.copy(fname, outname) # copy file over to data folder
+    # --- Save to NetCDF ---
+    out_file = os.path.join(path_to_out, f"WRFDS_{output_varname}_{year}.nc")
+    print(f"Writing {output_varname} for {year} to {out_file}")
+    new_ds.to_netcdf(out_file, mode="w", format="NETCDF4")
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python preprocess_WRF.py <config_file> <job_info>")
+        sys.exit(1)
+
+    config_file, job_info = sys.argv[1], sys.argv[2]
+    main(config_file, job_info)

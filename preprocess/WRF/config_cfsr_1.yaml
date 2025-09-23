@@ -1,0 +1,640 @@
+job_1:
+  model: cfsr
+  varname: ivt
+  year: '1980'
+job_10:
+  model: cfsr
+  varname: pcpt
+  year: '1982'
+job_100:
+  model: cfsr
+  varname: uv925
+  year: '2004'
+job_101:
+  model: cfsr
+  varname: ivt
+  year: '2005'
+job_102:
+  model: cfsr
+  varname: pcpt
+  year: '2005'
+job_103:
+  model: cfsr
+  varname: freezing_level
+  year: '2005'
+job_104:
+  model: cfsr
+  varname: uv925
+  year: '2005'
+job_105:
+  model: cfsr
+  varname: ivt
+  year: '2006'
+job_106:
+  model: cfsr
+  varname: pcpt
+  year: '2006'
+job_107:
+  model: cfsr
+  varname: freezing_level
+  year: '2006'
+job_108:
+  model: cfsr
+  varname: uv925
+  year: '2006'
+job_109:
+  model: cfsr
+  varname: ivt
+  year: '2007'
+job_11:
+  model: cfsr
+  varname: freezing_level
+  year: '1982'
+job_110:
+  model: cfsr
+  varname: pcpt
+  year: '2007'
+job_111:
+  model: cfsr
+  varname: freezing_level
+  year: '2007'
+job_112:
+  model: cfsr
+  varname: uv925
+  year: '2007'
+job_113:
+  model: cfsr
+  varname: ivt
+  year: '2008'
+job_114:
+  model: cfsr
+  varname: pcpt
+  year: '2008'
+job_115:
+  model: cfsr
+  varname: freezing_level
+  year: '2008'
+job_116:
+  model: cfsr
+  varname: uv925
+  year: '2008'
+job_117:
+  model: cfsr
+  varname: ivt
+  year: '2009'
+job_118:
+  model: cfsr
+  varname: pcpt
+  year: '2009'
+job_119:
+  model: cfsr
+  varname: freezing_level
+  year: '2009'
+job_12:
+  model: cfsr
+  varname: uv925
+  year: '1982'
+job_120:
+  model: cfsr
+  varname: uv925
+  year: '2009'
+job_121:
+  model: cfsr
+  varname: ivt
+  year: '2010'
+job_122:
+  model: cfsr
+  varname: pcpt
+  year: '2010'
+job_123:
+  model: cfsr
+  varname: freezing_level
+  year: '2010'
+job_124:
+  model: cfsr
+  varname: uv925
+  year: '2010'
+job_125:
+  model: cfsr
+  varname: ivt
+  year: '2011'
+job_126:
+  model: cfsr
+  varname: pcpt
+  year: '2011'
+job_127:
+  model: cfsr
+  varname: freezing_level
+  year: '2011'
+job_128:
+  model: cfsr
+  varname: uv925
+  year: '2011'
+job_129:
+  model: cfsr
+  varname: ivt
+  year: '2012'
+job_13:
+  model: cfsr
+  varname: ivt
+  year: '1983'
+job_130:
+  model: cfsr
+  varname: pcpt
+  year: '2012'
+job_131:
+  model: cfsr
+  varname: freezing_level
+  year: '2012'
+job_132:
+  model: cfsr
+  varname: uv925
+  year: '2012'
+job_133:
+  model: cfsr
+  varname: ivt
+  year: '2013'
+job_134:
+  model: cfsr
+  varname: pcpt
+  year: '2013'
+job_135:
+  model: cfsr
+  varname: freezing_level
+  year: '2013'
+job_136:
+  model: cfsr
+  varname: uv925
+  year: '2013'
+job_137:
+  model: cfsr
+  varname: ivt
+  year: '2014'
+job_138:
+  model: cfsr
+  varname: pcpt
+  year: '2014'
+job_139:
+  model: cfsr
+  varname: freezing_level
+  year: '2014'
+job_14:
+  model: cfsr
+  varname: pcpt
+  year: '1983'
+job_140:
+  model: cfsr
+  varname: uv925
+  year: '2014'
+job_141:
+  model: cfsr
+  varname: ivt
+  year: '2015'
+job_142:
+  model: cfsr
+  varname: pcpt
+  year: '2015'
+job_143:
+  model: cfsr
+  varname: freezing_level
+  year: '2015'
+job_144:
+  model: cfsr
+  varname: uv925
+  year: '2015'
+job_145:
+  model: cfsr
+  varname: ivt
+  year: '2016'
+job_146:
+  model: cfsr
+  varname: pcpt
+  year: '2016'
+job_147:
+  model: cfsr
+  varname: freezing_level
+  year: '2016'
+job_148:
+  model: cfsr
+  varname: uv925
+  year: '2016'
+job_149:
+  model: cfsr
+  varname: ivt
+  year: '2017'
+job_15:
+  model: cfsr
+  varname: freezing_level
+  year: '1983'
+job_150:
+  model: cfsr
+  varname: pcpt
+  year: '2017'
+job_151:
+  model: cfsr
+  varname: freezing_level
+  year: '2017'
+job_152:
+  model: cfsr
+  varname: uv925
+  year: '2017'
+job_153:
+  model: cfsr
+  varname: ivt
+  year: '2018'
+job_154:
+  model: cfsr
+  varname: pcpt
+  year: '2018'
+job_155:
+  model: cfsr
+  varname: freezing_level
+  year: '2018'
+job_156:
+  model: cfsr
+  varname: uv925
+  year: '2018'
+job_157:
+  model: cfsr
+  varname: ivt
+  year: '2019'
+job_158:
+  model: cfsr
+  varname: pcpt
+  year: '2019'
+job_159:
+  model: cfsr
+  varname: freezing_level
+  year: '2019'
+job_16:
+  model: cfsr
+  varname: uv925
+  year: '1983'
+job_160:
+  model: cfsr
+  varname: uv925
+  year: '2019'
+job_17:
+  model: cfsr
+  varname: ivt
+  year: '1984'
+job_18:
+  model: cfsr
+  varname: pcpt
+  year: '1984'
+job_19:
+  model: cfsr
+  varname: freezing_level
+  year: '1984'
+job_2:
+  model: cfsr
+  varname: pcpt
+  year: '1980'
+job_20:
+  model: cfsr
+  varname: uv925
+  year: '1984'
+job_21:
+  model: cfsr
+  varname: ivt
+  year: '1985'
+job_22:
+  model: cfsr
+  varname: pcpt
+  year: '1985'
+job_23:
+  model: cfsr
+  varname: freezing_level
+  year: '1985'
+job_24:
+  model: cfsr
+  varname: uv925
+  year: '1985'
+job_25:
+  model: cfsr
+  varname: ivt
+  year: '1986'
+job_26:
+  model: cfsr
+  varname: pcpt
+  year: '1986'
+job_27:
+  model: cfsr
+  varname: freezing_level
+  year: '1986'
+job_28:
+  model: cfsr
+  varname: uv925
+  year: '1986'
+job_29:
+  model: cfsr
+  varname: ivt
+  year: '1987'
+job_3:
+  model: cfsr
+  varname: freezing_level
+  year: '1980'
+job_30:
+  model: cfsr
+  varname: pcpt
+  year: '1987'
+job_31:
+  model: cfsr
+  varname: freezing_level
+  year: '1987'
+job_32:
+  model: cfsr
+  varname: uv925
+  year: '1987'
+job_33:
+  model: cfsr
+  varname: ivt
+  year: '1988'
+job_34:
+  model: cfsr
+  varname: pcpt
+  year: '1988'
+job_35:
+  model: cfsr
+  varname: freezing_level
+  year: '1988'
+job_36:
+  model: cfsr
+  varname: uv925
+  year: '1988'
+job_37:
+  model: cfsr
+  varname: ivt
+  year: '1989'
+job_38:
+  model: cfsr
+  varname: pcpt
+  year: '1989'
+job_39:
+  model: cfsr
+  varname: freezing_level
+  year: '1989'
+job_4:
+  model: cfsr
+  varname: uv925
+  year: '1980'
+job_40:
+  model: cfsr
+  varname: uv925
+  year: '1989'
+job_41:
+  model: cfsr
+  varname: ivt
+  year: '1990'
+job_42:
+  model: cfsr
+  varname: pcpt
+  year: '1990'
+job_43:
+  model: cfsr
+  varname: freezing_level
+  year: '1990'
+job_44:
+  model: cfsr
+  varname: uv925
+  year: '1990'
+job_45:
+  model: cfsr
+  varname: ivt
+  year: '1991'
+job_46:
+  model: cfsr
+  varname: pcpt
+  year: '1991'
+job_47:
+  model: cfsr
+  varname: freezing_level
+  year: '1991'
+job_48:
+  model: cfsr
+  varname: uv925
+  year: '1991'
+job_49:
+  model: cfsr
+  varname: ivt
+  year: '1992'
+job_5:
+  model: cfsr
+  varname: ivt
+  year: '1981'
+job_50:
+  model: cfsr
+  varname: pcpt
+  year: '1992'
+job_51:
+  model: cfsr
+  varname: freezing_level
+  year: '1992'
+job_52:
+  model: cfsr
+  varname: uv925
+  year: '1992'
+job_53:
+  model: cfsr
+  varname: ivt
+  year: '1993'
+job_54:
+  model: cfsr
+  varname: pcpt
+  year: '1993'
+job_55:
+  model: cfsr
+  varname: freezing_level
+  year: '1993'
+job_56:
+  model: cfsr
+  varname: uv925
+  year: '1993'
+job_57:
+  model: cfsr
+  varname: ivt
+  year: '1994'
+job_58:
+  model: cfsr
+  varname: pcpt
+  year: '1994'
+job_59:
+  model: cfsr
+  varname: freezing_level
+  year: '1994'
+job_6:
+  model: cfsr
+  varname: pcpt
+  year: '1981'
+job_60:
+  model: cfsr
+  varname: uv925
+  year: '1994'
+job_61:
+  model: cfsr
+  varname: ivt
+  year: '1995'
+job_62:
+  model: cfsr
+  varname: pcpt
+  year: '1995'
+job_63:
+  model: cfsr
+  varname: freezing_level
+  year: '1995'
+job_64:
+  model: cfsr
+  varname: uv925
+  year: '1995'
+job_65:
+  model: cfsr
+  varname: ivt
+  year: '1996'
+job_66:
+  model: cfsr
+  varname: pcpt
+  year: '1996'
+job_67:
+  model: cfsr
+  varname: freezing_level
+  year: '1996'
+job_68:
+  model: cfsr
+  varname: uv925
+  year: '1996'
+job_69:
+  model: cfsr
+  varname: ivt
+  year: '1997'
+job_7:
+  model: cfsr
+  varname: freezing_level
+  year: '1981'
+job_70:
+  model: cfsr
+  varname: pcpt
+  year: '1997'
+job_71:
+  model: cfsr
+  varname: freezing_level
+  year: '1997'
+job_72:
+  model: cfsr
+  varname: uv925
+  year: '1997'
+job_73:
+  model: cfsr
+  varname: ivt
+  year: '1998'
+job_74:
+  model: cfsr
+  varname: pcpt
+  year: '1998'
+job_75:
+  model: cfsr
+  varname: freezing_level
+  year: '1998'
+job_76:
+  model: cfsr
+  varname: uv925
+  year: '1998'
+job_77:
+  model: cfsr
+  varname: ivt
+  year: '1999'
+job_78:
+  model: cfsr
+  varname: pcpt
+  year: '1999'
+job_79:
+  model: cfsr
+  varname: freezing_level
+  year: '1999'
+job_8:
+  model: cfsr
+  varname: uv925
+  year: '1981'
+job_80:
+  model: cfsr
+  varname: uv925
+  year: '1999'
+job_81:
+  model: cfsr
+  varname: ivt
+  year: '2000'
+job_82:
+  model: cfsr
+  varname: pcpt
+  year: '2000'
+job_83:
+  model: cfsr
+  varname: freezing_level
+  year: '2000'
+job_84:
+  model: cfsr
+  varname: uv925
+  year: '2000'
+job_85:
+  model: cfsr
+  varname: ivt
+  year: '2001'
+job_86:
+  model: cfsr
+  varname: pcpt
+  year: '2001'
+job_87:
+  model: cfsr
+  varname: freezing_level
+  year: '2001'
+job_88:
+  model: cfsr
+  varname: uv925
+  year: '2001'
+job_89:
+  model: cfsr
+  varname: ivt
+  year: '2002'
+job_9:
+  model: cfsr
+  varname: ivt
+  year: '1982'
+job_90:
+  model: cfsr
+  varname: pcpt
+  year: '2002'
+job_91:
+  model: cfsr
+  varname: freezing_level
+  year: '2002'
+job_92:
+  model: cfsr
+  varname: uv925
+  year: '2002'
+job_93:
+  model: cfsr
+  varname: ivt
+  year: '2003'
+job_94:
+  model: cfsr
+  varname: pcpt
+  year: '2003'
+job_95:
+  model: cfsr
+  varname: freezing_level
+  year: '2003'
+job_96:
+  model: cfsr
+  varname: uv925
+  year: '2003'
+job_97:
+  model: cfsr
+  varname: ivt
+  year: '2004'
+job_98:
+  model: cfsr
+  varname: pcpt
+  year: '2004'
+job_99:
+  model: cfsr
+  varname: freezing_level
+  year: '2004'

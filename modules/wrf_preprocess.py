@@ -9,7 +9,10 @@ Description: preprocess functions for AK 4 km WRF simulations downloaded from ht
 import numpy as np
 import xarray as xr
 import pandas as pd
-import re
+from wrf import interplevel
+
+from wrf_utils import filter_vars
+from time_helpers import find_date_based_on_filename
 
 def calc_IVT_manual(ds):
     '''
@@ -50,20 +53,31 @@ def calc_IVT_manual(ds):
     ivt = np.sqrt(qu**2 + qv**2)
     ivt.name = 'ivt'
 
-    ds = xr.merge([qu, qv, ivt, lats, lons])
+    ds = xr.merge([qu, qv, ivt], compat='no_conflicts')
 
     return ds
     
-def preprocess_WRF_ivt(ds, fname):
-    drop_varlst = ['SLP', 'U10', 'V10', 'T2', 'TSLB',
-                   'Q2', 'TSK', 'SNOW', 'SNOWH', 'SNOWC',
-                   'PW', 'LH', 'HFX', 'ALBEDO', 'LWDNB',
-                   'LWDNBC', 'LWUPB', 'LWUPBC', 'SWDNB', 'SWDNBC',
-                   'SWUPB', 'SWUPBC', 'PCPT', 'ACSNOW', 'TMAX',
-                   'TMIN', 'T', 'CLDFRA', 'GHT', 'SMOIS', 'SH2O']
-    ds = ds.drop_vars(drop_varlst)
-    ds = ds.rename({'interp_levels': 'isobaricInhPa', 'QVAPOR': 'q', 'V': 'v', 'U': 'u', 'PSFC': 'sp'})
-    ds = ds.sel(isobaricInhPa=slice(300, 1000)) # subset to the levels we need for interpolation
+def preprocess_WRF_ivt(ds: xr.Dataset, fname: str) -> xr.Dataset:
+    """
+    Preprocess WRF dataset to compute IVTu and IVTv.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input WRF dataset.
+    fname : str
+        Filename (used to extract valid date/time).
+
+    Returns
+    -------
+    xr.Dataset
+        Preprocessed dataset with only IVTu and IVTv.
+    """
+    
+    ds = filter_vars(ds, fname, "ivt", find_date_func=find_date_based_on_filename)
+
+    # subset to the levels we need for interpolation
+    ds = ds.sel(isobaricInhPa=slice(300, 1000)) 
     ds = ds.reindex(isobaricInhPa=ds.isobaricInhPa[::-1]) ## flip pressure levels
     ## mask values below surface pressure
     print('Masking values below surface ....')
@@ -71,12 +85,89 @@ def preprocess_WRF_ivt(ds, fname):
     for i, varname in enumerate(varlst):
         ds[varname] = ds[varname].where(ds[varname].isobaricInhPa < ds.sp/100., drop=False)
     ds = calc_IVT_manual(ds)
-
-    numbers = re.findall(r'\d+', fname)
-    df = pd.DataFrame([numbers], columns=['Year', 'Month', 'Day'])
-    date = pd.to_datetime(df)
-    date = date.values
-
-    ds['Time'] = date
     
     return ds
+
+def preprocess_WRF_uv(ds: xr.Dataset, fname: str, lev: float = 925.0) -> xr.Dataset:
+    """
+    Preprocess WRF dataset to extract 850-hPa winds (u and v).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input WRF dataset.
+    fname : str
+        Filename (used to extract valid date/time).
+
+    Returns
+    -------
+    xr.Dataset
+        Preprocessed dataset with only U and V at the requesting.
+    """
+    
+    ds = filter_vars(ds, fname, "uv925", find_date_func=find_date_based_on_filename)
+
+    # Subset to requested pressure level
+    if "isobaricInhPa" not in ds.dims:
+        raise KeyError("'isobaricInhPa' dimension not found in dataset")
+    if lev not in ds["isobaricInhPa"].values:
+        raise ValueError(f"Level {lev} hPa not available in dataset")
+
+    ds = ds.sel(isobaricInhPa=lev)
+    
+    ## calculate UV magnitude
+    ds['uv'] = np.sqrt(ds['u']**2 + ds['v']**2)
+
+    return ds
+
+def preprocess_WRF_pcpt(ds: xr.Dataset, fname: str) -> xr.Dataset:
+    """
+    Preprocess WRF dataset to extract precipitation (PCPT).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input WRF dataset.
+    fname : str
+        Filename (used to extract valid date/time).
+
+    Returns
+    -------
+    xr.Dataset
+        Preprocessed dataset with precipitation only.
+    """
+    return filter_vars(ds, fname, "pcpt", find_date_func=find_date_based_on_filename)
+
+def preprocess_WRF_freezing_level(ds: xr.Dataset, fname: str) -> xr.Dataset:
+    """
+    Preprocess WRF dataset to compute freezing level or the height in m at which temperature was 0*C.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input WRF dataset.
+    fname : str
+        Filename (used to extract valid date/time).
+
+    Returns
+    -------
+    xr.Dataset
+        Preprocessed dataset with freezing level in m.
+    """
+
+    ds = filter_vars(ds, fname, "freezing_level", find_date_func=find_date_based_on_filename)
+    ds = ds.sel(isobaricInhPa=slice(200, 1000)) # only interested in freezing level below 200 hPa
+    ## need 2 3D arrays for input
+    ## reshape output arrays
+    ntime, nlev, nlat, nlon = ds.GHT.shape
+    gh = ds.GHT.values # height in meters
+    t = ds.T.values # temperature in *C
+    
+    # interpolate gh to temperature = 0
+    interp_var = interplevel(gh, t, [0])
+    ds['freezing_level'] = (("Time", "south_north", "west_east"), interp_var.data[np.newaxis, :, :])
+    keep = ["freezing_level", "lat", "lon", "time"]
+    ds = ds[[v for v in keep if v in ds]]
+    
+    return ds
+

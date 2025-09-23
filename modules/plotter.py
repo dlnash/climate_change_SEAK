@@ -25,6 +25,7 @@ import pandas as pd
 from matplotlib.gridspec import GridSpec
 from matplotlib.colorbar import Colorbar # different way to handle colorbar
 import seaborn as sns
+import cmocean
 import cmocean.cm as cmo
 from datetime import timedelta
 import textwrap
@@ -171,7 +172,7 @@ def plot_trend_with_clim(ds, ds_clim, varname, lons, lats, model,
     dx = np.arange(lonmin, lonmax+3, 3)
     dy = np.arange(latmin, latmax+1, 1)
 
-    fig = plt.figure(figsize=(10, 3.))  # wider for two columns
+    fig = plt.figure(figsize=(9, 3.))  # wider for two columns
     fig.dpi = 300
     fname = f'../figs/{model}_{varname}_clim_trend'
     fmt = 'png'
@@ -180,24 +181,37 @@ def plot_trend_with_clim(ds, ds_clim, varname, lons, lats, model,
     gs = GridSpec(nrows, ncols,
                   height_ratios=[1, 0.05],  # map row + colorbar row
                   width_ratios=[1, 1],      # climatology + trend
-                  wspace=0.15, hspace=0.05)
+                  wspace=0.05, hspace=0.05)
 
     # === Left column: Climatology ===
+    if varname == 'ivt':
+        cflevs = np.arange(150, 450, 25)
+        cmap = cmo.deep
+    elif varname == 'pcpt':
+        cflevs = np.arange(0, 110, 10)
+        cmap = cmo.rain
+    elif varname == 'uv':
+        cflevs = np.arange(0, 25, 2)
+        cmap = cmo.dense
+    elif varname == 'freezing_level':
+        cflevs = np.arange(2500, 3700, 100)
+        cmap = cmocean.tools.crop_by_percent(cmo.ice, 20, which='min', N=None)
     ax0 = fig.add_subplot(gs[0, 0], projection=mapcrs)
     ax0 = draw_basemap(ax0, extent=[lonmin, lonmax, latmin, latmax],
                        xticks=dx, yticks=dy, left_lats=True,
                        right_lats=False, bottom_lons=True)
 
     cfield = ds_clim[varname].values
-    cflevs = np.linspace(np.nanmin(cfield), np.nanmax(cfield), 21)
+    # cflevs = np.linspace(np.nanmin(cfield), np.nanmax(cfield), 21)
+    
     cf0 = ax0.contourf(lons, lats, cfield, transform=datacrs,
-                       levels=cflevs, cmap=cmo.deep, extend='max')
-    ax0.set_title(f"{varname.upper()} Climatology")
+                       levels=cflevs, cmap=cmap, extend='max')
+    ax0.set_title(f"{varname.upper()} avg 95th percentile", loc='left')
 
     # --- Colorbar for climatology ---
     cbax0 = plt.subplot(gs[1, 0])
     cb0 = Colorbar(ax=cbax0, mappable=cf0, orientation='horizontal', ticklocation='bottom')
-    cb0.set_label(fr'{varname.upper()} (climatology units)', fontsize=10)
+    cb0.set_label(fr'{varname.upper()} ({ds_clim[varname].attrs['units']})', fontsize=10)
     cb0.ax.tick_params(labelsize=10)
 
     # === Right column: Trend (with optional vectors) ===
@@ -211,23 +225,27 @@ def plot_trend_with_clim(ds, ds_clim, varname, lons, lats, model,
         if varname == "ivt":
             ukey, vkey, pkey = "ivtu_trend", "ivtv_trend", "ivt_p"
             ckey = "ivt_trend"
+            cflevs = np.arange(-10, 12, 2)
         elif varname == "uv":
             ukey, vkey, pkey = "u_trend", "v_trend", "uv_p"
             ckey = "u_trend"  # or another scalar field
-
+            cflevs = np.arange(-10, 12, 2)
+            
         uvec = ds[ukey].where(ds[pkey] <= sig_level).values
         vvec = ds[vkey].where(ds[pkey] <= sig_level).values
 
-        cflevs = np.arange(-0.3, 0.305, 0.05)
+        # --- compute percent change based on number of years and the clim
+        perc_change = (ds[ckey].values*ds.attrs['n_years']/ds_clim[varname].values)*100.
+        print(f'Minimum % change: {np.nanmin(perc_change)}, Maximum % change: {np.nanmax(perc_change)}')
         # cflevs = np.linspace(np.nanmin(ds[ckey].values), np.nanmax(ds[ckey].values), 0.05)
-        cf1 = ax1.contourf(lons, lats, ds[ckey].values, transform=datacrs,
+        cf1 = ax1.contourf(lons, lats, perc_change, transform=datacrs,
                            levels=cflevs, cmap='BrBG', extend='both')
 
         Q = ax1.quiver(lons, lats, uvec, vvec, transform=datacrs,
                        color='k', regrid_shape=13, pivot='middle',
                        angles='xy', scale_units='xy', scale=1, units='xy')
-
-        ax1.quiverkey(Q, 0.1, -0.05, 1, '1 unit/day', labelpos='E',
+        per_yr = 'yr$^{-1}$'
+        ax1.quiverkey(Q, 0.65, 1.05, 0.25, f'0.25 {ds_clim[varname].attrs['units']} {per_yr}', labelpos='E',
                       coordinates='axes', fontproperties={'size': 8.0})
 
     else:
@@ -235,17 +253,27 @@ def plot_trend_with_clim(ds, ds_clim, varname, lons, lats, model,
         pkey = f"{varname}_p"
         field = ds[ckey].where(ds[pkey] <= sig_level).values
 
-        # cflevs = np.linspace(np.nanmin(field), np.nanmax(field), 0.05)
-        cflevs = np.arange(-0.3, 0.305, 0.05)
-        cf1 = ax1.contourf(lons, lats, field, transform=datacrs,
-                           levels=cflevs, cmap='BrBG', extend='both')
+        if varname == "pcpt":
+            cflevs = np.arange(-40, 50, 10)
+            cmap = 'BrBG'
+        elif varname == 'freezing_level':
+            cflevs = np.arange(-10, 12, 2)
+            cmap = cmocean.tools.crop_by_percent(cmo.balance, 20, which='both', N=None)
 
-    ax1.set_title(f"{varname.upper()} Trend")
+            
+        # --- compute percent change based on number of years and the clim
+        perc_change = (field*ds.attrs['n_years']/ds_clim[varname].values)*100.
+        print(f'Minimum % change: {np.nanmin(perc_change)}, Maximum % change: {np.nanmax(perc_change)}')
+        
+        cf1 = ax1.contourf(lons, lats, perc_change, transform=datacrs,
+                           levels=cflevs, cmap=cmap, extend='both')
+
+    ax1.set_title(f"{varname.upper()} Trend", loc='left')
 
     # --- Colorbar for trend ---
     cbax1 = plt.subplot(gs[1, 1])
     cb1 = Colorbar(ax=cbax1, mappable=cf1, orientation='horizontal', ticklocation='bottom')
-    cb1.set_label(fr'$\Delta$ {varname.upper()} (trend units)', fontsize=10)
+    cb1.set_label(fr'$\Delta$ {varname.upper()} (%)', fontsize=10)
     cb1.ax.tick_params(labelsize=10)
 
     # Save

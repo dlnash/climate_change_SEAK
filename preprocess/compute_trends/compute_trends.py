@@ -29,16 +29,36 @@ def main(config_file: str, job_info: str):
     varname = ddict["varname"]
     model = ddict["model"]
  
-    # --- read the anomaly data ---
-    ds = load_preprocessed_WRF_data(model, varname, anomaly=True)
+    # --- read the non-anomaly data ---
+    ds = load_preprocessed_WRF_data(model, varname, anomaly=False)
     
-    # --- load dates list ---
-    fname = '../../out/PCPT_95th_25perc-cov_dates.csv'
-    df = pd.read_csv(fname)
-    dates = pd.to_datetime(df['date'], format='%Y-%m-%d')
-    
-    # --- subset data to dates list ---
-    ds = ds.sel(time=dates.values)
+    # --- compute 95th percentile for var for each year ---
+    ds = ds.groupby("time.year").quantile(0.95, dim="time").rename(year="time")
+
+    # --- get clim of 95th percentile ---
+    ds_clim = ds.mean('time')
+
+    # --- add units to clim ---
+    if varname == 'uv925':
+        units = 'm s$^{-1}$'
+        varname = 'uv'
+    elif varname == 'ivt':
+        units = 'kg m$^{-1}$ s$^{-1}$'
+    elif varname == 'pcpt':
+        units = 'mm day$^{-1}$'
+    elif varname == 'freezing_level':
+        units = 'm'
+    ds_clim[varname].attrs['units'] = units
+
+    # --- Save as netCDF ---
+    path_to_data = globalvars.path_to_data
+    datadir = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/")
+    os.makedirs(datadir, exist_ok=True) # ensure the directory exists
+    outdir = os.path.join(datadir, f"{varname}_{model}_clim.nc")
+    ds_clim.to_netcdf(path=outdir, mode = 'w', format='NETCDF4')
+
+    # --- get number of years in model - this will be added as an attribute ---
+    n_years = ds.time.size  # since time now represents years
     
     # --- Compute trends ---
     vars_lst = [v for v in ds.data_vars if v not in ["lat", "lon"]]
@@ -53,11 +73,9 @@ def main(config_file: str, job_info: str):
         trend_lst.append(trend)
     
     trend = xr.merge(trend_lst)
+    trend.attrs['n_years'] = int(n_years)
     
     # --- Save as netCDF ---
-    path_to_data = globalvars.path_to_data
-    datadir = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/")
-    os.makedirs(datadir, exist_ok=True) # ensure the directory exists
     outdir = os.path.join(datadir, f"{varname}_{model}_trends.nc")
     trend.to_netcdf(path=outdir, mode = 'w', format='NETCDF4')
 

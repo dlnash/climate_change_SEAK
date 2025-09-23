@@ -28,26 +28,18 @@ from plotter import plot_trend_with_clim
 # --- Settings ---
 model = 'cfsr'
 path_to_data = globalvars.path_to_data
-varnames = ['ivt', 'pcpt', 'freezing_level', 'uv925']
-
-# --- load dates list ---
-fname = '../out/PCPT_95th_25perc-cov_dates.csv'
-df = pd.read_csv(fname)
-dates = pd.to_datetime(df['date'], format='%Y-%m-%d')
+varnames = ['ivt', 'pcpt', 'freezing_level', 'uv']
 
 # --- Loop over all variables ---
 for varname in varnames:
     print(f"Processing {varname}...")
 
-    # Load full dataset (non-anomaly) for climatology
-    ds_full = load_preprocessed_WRF_data(model, varname, anomaly=False)
-
-    # Average climatology over selected dates
-    ds_clim = ds_full.sel(time=dates.values).mean('time')
+    fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/{varname}_{model}_clim.nc")
+    ds_clim = xr.open_dataset(fname)
 
     # Get lons/lats from this dataset
-    lons = ds_full.lon.values
-    lats = ds_full.lat.values
+    lons = ds_clim.lon.values
+    lats = ds_clim.lat.values
 
     # Load precomputed trends file
     trend_fname = os.path.join(

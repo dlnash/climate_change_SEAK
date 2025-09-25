@@ -6,6 +6,7 @@ Description: Shared constants and helper functions for WRF preprocessing.
 """
 import sys, os
 import xarray as xr
+import numpy as np
 from typing import Dict, List, Optional
 import globalvars
 path_to_data = globalvars.path_to_data
@@ -108,4 +109,37 @@ def load_preprocessed_WRF_data(model, varname, anomaly=False):
     ds = ds.rename_dims({'south_north': 'y', 'west_east': 'x'})
     
     return ds
+
+def find_nearest_indices(ds, lat, lon):
+    # Function to find nearest grid indices on 2D curvilinear grid
+    dist = (ds['lat'] - lat)**2 + (ds['lon'] - lon)**2
+    iy, ix = np.unravel_index(dist.argmin(), dist.shape)
+    return iy, ix
+
+def subset_wrf_ds(ds):
+    # input lists
+    lon_lst = [-135.4519, -135.3277, -135.8894, -139.671, -133.1358, -132.4009]
+    lat_lst = [58.1122, 59.4538, 59.3988, 59.5121, 55.4769, 55.5400]
+    lbl_lst = ['Hoonah', 'Skagway', 'Klukwan', 'Yakutat', 'Craig', 'Kasaan']
+    
+    # Get indices for each requested point
+    indices = [find_nearest_indices(ds, la, lo) for la, lo in zip(lat_lst, lon_lst)]
+    iy = [i[0] for i in indices]
+    ix = [i[1] for i in indices]
+    
+    # Subset the dataset
+    subset = ds.isel(
+        y=xr.DataArray(iy, dims="location"),
+        x=xr.DataArray(ix, dims="location")
+    )
+    
+    # Attach the requested coordinates and labels to the new "location" dim
+    subset = subset.assign_coords(
+        location=lbl_lst,
+        lat=("location", lat_lst),
+        lon=("location", lon_lst)
+    )
+
+    return subset
+
 

@@ -1,5 +1,5 @@
 """
-Filename:    trend_plot.py
+Filename:    trend_map_plot.py
 Author:      Deanna Nash, dnash@ucsd.edu
 Description: Script to plot trends for each variable given a model name.
 """
@@ -26,7 +26,7 @@ from wrf_utils import load_preprocessed_WRF_data
 from plotter import plot_trend_with_clim
 
 # --- Settings ---
-model = 'cfsr'
+model = 'gfdl'
 path_to_data = globalvars.path_to_data
 varnames = ['ivt', 'pcpt', 'freezing_level', 'uv']
 

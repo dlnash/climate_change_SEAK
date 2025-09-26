@@ -10,3 +10,6 @@ job_3:
 job_4:
   model: ccsm
   varname: uv925
+job_5:
+  model: ccsm
+  varname: snow

@@ -48,6 +48,8 @@ def main(config_file: str, job_info: str):
         units = 'mm day$^{-1}$'
     elif varname == 'freezing_level':
         units = 'm'
+    elif varname == 'snow':
+        units = 'kg m$^{-2}$'
     ds_clim[varname].attrs['units'] = units
 
     # --- Save as netCDF ---

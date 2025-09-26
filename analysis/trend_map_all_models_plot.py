@@ -80,13 +80,15 @@ def plot_trend_multi_models(models, varname, path_to_data,
         # pick contour levels and cmap
         if varname == 'ivt':
             cflevs = np.arange(150, 750, 100); cmap = cmo.deep
-        elif varname == 'pcpt':
+        elif (varname == 'pcpt'):
             cflevs = np.arange(0, 110, 10); cmap = cmo.rain
-        elif varname == 'uv':
+        elif (varname == 'uv'):
             cflevs = np.arange(0, 55, 5); cmap = cmo.dense
         elif varname == 'freezing_level':
             cflevs = np.arange(2500, 4600, 100)
             cmap = cmocean.tools.crop_by_percent(cmo.ice, 20, which='min')
+        elif varname == 'snow':
+            cflevs = np.arange(0, 1100, 100); cmap = cmo.rain
 
         cfield = ds_clim[varname].values
         cf0 = ax0.contourf(lons, lats, cfield, transform=datacrs,
@@ -136,7 +138,7 @@ def plot_trend_multi_models(models, varname, path_to_data,
             pkey = f"{varname}_p"
             field = ds_trend[ckey].where(ds_trend[pkey] <= sig_level).values
 
-            if varname == "pcpt":
+            if (varname == "pcpt") | (varname == "snow"):
                 # cflevs_tr = np.arange(-40, 50, 10); 
                 cmap_tr = "BrBG"
             elif varname == "freezing_level":
@@ -176,7 +178,7 @@ def plot_trend_multi_models(models, varname, path_to_data,
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
-    varnames = ["ivt", "pcpt", "freezing_level", "uv"]
+    varnames = ["ivt", "pcpt", "freezing_level", "uv", "snow"]
 
     for varname in varnames:
-        plot_trend_multi_models(models, varname, path_to_data)
+        plot_trend_multi_models(models, varname, path_to_data,sig_level=1)

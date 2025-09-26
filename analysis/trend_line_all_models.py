@@ -23,7 +23,7 @@ from wrf_utils import load_preprocessed_WRF_data, subset_wrf_ds
 # Settings
 # ----------------------
 models = ["cfsr", "ccsm", "gfdl"]       # your three models
-varnames = ["ivt", "pcpt", "freezing_level", "uv"]
+varnames = ["ivt", "pcpt", "freezing_level", "uv", "snow"]
 path_to_data = globalvars.path_to_data
 
 # ----------------------
@@ -54,7 +54,7 @@ def add_regplot(ax, df, varname, show_legend=False):
 # ----------------------
 fig, axes = plt.subplots(
     nrows=len(models), ncols=len(varnames),
-    figsize=(16, 12), dpi=300,
+    figsize=(20, 12), dpi=300,
     sharex=False, sharey=False
 )
 

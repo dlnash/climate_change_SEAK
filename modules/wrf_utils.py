@@ -17,6 +17,7 @@ KEEP_VARS: Dict[str, List[str]] = {
     "uv925": ["U", "V", "interp_levels", "lat", "lon"],
     "freezing_level": ["T", "GHT", "lat", "lon"],
     "pcpt": ["PCPT", "lat", "lon"],
+    "snow": ["SNOW", "SNOWH", "SNOWC", "lat", "lon"]
 }
 
 # Optional renaming rules for consistency
@@ -25,7 +26,8 @@ RENAME_MAP: Dict[str, Dict[str, str]] = {
     "pcpt": {"PCPT": "pcpt"},
     "ivt": {'interp_levels': 'isobaricInhPa', 'QVAPOR': 'q', 'V': 'v', 'U': 'u', 'PSFC': 'sp'},
     "freezing_level": {'interp_levels': 'isobaricInhPa'},
-    # ivt / freezing_level could also go here if needed
+    "snow": {"SNOW": "snow", "SNOWH": "snowh", "SNOWC": "snowc"}
+    # other variables could also go here if needed
 }
 
 

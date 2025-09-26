@@ -48,6 +48,7 @@ def main(config_file: str, job_info: str):
         "freezing_level": wrf_prep.preprocess_WRF_freezing_level,
         "uv925": wrf_prep.preprocess_WRF_uv,
         "pcpt": wrf_prep.preprocess_WRF_pcpt,
+        "snow": wrf_prep.preprocess_WRF_snow
     }
 
     if output_varname not in preprocess_map:

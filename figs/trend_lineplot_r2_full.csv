@@ -23,6 +23,12 @@ cfsr,uv,Kasaan,0.0
 cfsr,uv,Klukwan,0.0
 cfsr,uv,Skagway,0.01
 cfsr,uv,Yakutat,0.0
+cfsr,snow,Craig,0.04
+cfsr,snow,Hoonah,0.01
+cfsr,snow,Kasaan,0.05
+cfsr,snow,Klukwan,0.04
+cfsr,snow,Skagway,0.17
+cfsr,snow,Yakutat,0.08
 ccsm,ivt,Craig,0.22
 ccsm,ivt,Hoonah,0.23
 ccsm,ivt,Kasaan,0.22
@@ -47,6 +53,12 @@ ccsm,uv,Kasaan,0.04
 ccsm,uv,Klukwan,0.08
 ccsm,uv,Skagway,0.01
 ccsm,uv,Yakutat,0.02
+ccsm,snow,Craig,0.07
+ccsm,snow,Hoonah,0.0
+ccsm,snow,Kasaan,0.02
+ccsm,snow,Klukwan,0.05
+ccsm,snow,Skagway,0.13
+ccsm,snow,Yakutat,0.01
 gfdl,ivt,Craig,0.14
 gfdl,ivt,Hoonah,0.15
 gfdl,ivt,Kasaan,0.16
@@ -71,3 +83,9 @@ gfdl,uv,Kasaan,0.01
 gfdl,uv,Klukwan,0.02
 gfdl,uv,Skagway,0.02
 gfdl,uv,Yakutat,0.0
+gfdl,snow,Craig,0.0
+gfdl,snow,Hoonah,0.0
+gfdl,snow,Kasaan,0.01
+gfdl,snow,Klukwan,0.09
+gfdl,snow,Skagway,0.0
+gfdl,snow,Yakutat,0.04

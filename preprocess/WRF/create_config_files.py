@@ -10,7 +10,7 @@ import yaml
 MAX_JOBS_PER_FILE = 999
 conda_path = "/home/dnash/miniconda3/envs/SEAK-impacts/bin/python"
 models = ["ccsm", "gfdl", "cfsr"]
-varnames = ['ivt', 'pcpt', 'freezing_level', 'uv925']
+varnames = ['ivt', 'pcpt', 'freezing_level', 'uv925', 'snow']
 
 for model in models:
     # set year ranges depending on model
@@ -25,9 +25,8 @@ for model in models:
     filecounter = 0
     d_lst = []
     njob_lst = []
-
-    for yr in range(yr_start, yr_end + 1):
-        for varname in varnames:
+    for varname in varnames:
+        for yr in range(yr_start, yr_end + 1):
             jobcounter += 1
             d_lst.append({
                 f"job_{jobcounter}": {

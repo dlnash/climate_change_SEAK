@@ -10,7 +10,7 @@ import yaml
 MAX_JOBS_PER_FILE = 999
 conda_path = "/home/dnash/miniconda3/envs/SEAK-impacts/bin/python"
 models = ["ccsm", "gfdl", "cfsr"]
-varnames = ['ivt', 'pcpt', 'freezing_level', 'uv925']
+varnames = ['ivt', 'pcpt', 'freezing_level', 'uv925', 'snow']
 
 for model in models:
 

@@ -138,6 +138,24 @@ def preprocess_WRF_pcpt(ds: xr.Dataset, fname: str) -> xr.Dataset:
     """
     return filter_vars(ds, fname, "pcpt", find_date_func=find_date_based_on_filename)
 
+def preprocess_WRF_snow(ds: xr.Dataset, fname: str) -> xr.Dataset:
+    """
+    Preprocess WRF dataset to extract snow related variables (i.e., SWE, snow depth, snow cover).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input WRF dataset.
+    fname : str
+        Filename (used to extract valid date/time).
+
+    Returns
+    -------
+    xr.Dataset
+        Preprocessed dataset with snow only.
+    """
+    return filter_vars(ds, fname, "snow", find_date_func=find_date_based_on_filename)
+
 def preprocess_WRF_freezing_level(ds: xr.Dataset, fname: str) -> xr.Dataset:
     """
     Preprocess WRF dataset to compute freezing level or the height in m at which temperature was 0*C.

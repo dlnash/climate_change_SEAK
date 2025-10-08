@@ -154,7 +154,10 @@ def preprocess_WRF_snow(ds: xr.Dataset, fname: str) -> xr.Dataset:
     xr.Dataset
         Preprocessed dataset with snow only.
     """
-    return filter_vars(ds, fname, "snow", find_date_func=find_date_based_on_filename)
+
+    ds = filter_vars(ds, fname, "snow", find_date_func=find_date_based_on_filename)
+
+    return ds
 
 def preprocess_WRF_freezing_level(ds: xr.Dataset, fname: str) -> xr.Dataset:
     """

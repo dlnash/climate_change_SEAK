@@ -31,11 +31,11 @@ def main(config_file: str, job_info: str):
  
     # --- read the non-anomaly data ---
     ds = load_preprocessed_WRF_data(model, varname, anomaly=False)
-    
+
     # --- compute 95th percentile for var for each year ---
     ds = ds.groupby("time.year").quantile(0.95, dim="time").rename(year="time")
 
-    # --- get clim of 95th percentile ---
+    # --- get clim ---
     ds_clim = ds.mean('time')
 
     # --- add units to clim ---

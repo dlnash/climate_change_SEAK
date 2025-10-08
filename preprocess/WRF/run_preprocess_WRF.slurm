@@ -10,10 +10,10 @@
 #SBATCH --job-name=preprocess_WRF
 #SBATCH --mail-type=ALL # Type of email notification- BEGIN,END,FAIL,ALL
 #SBATCH --mail-user=dnash@ucsd.edu # Email to which notifications will be sent
-#SBATCH --array=125-155%30 # runs jobs x-y, 100 at a time
+#SBATCH --array=1-102%102 # runs jobs x-y, 100 at a time
 
 # Activate Anaconda work environment
 source /home/dnash/miniconda3/envs/SEAK-impacts/etc/conda/activate.d/*
  
-linevar=`sed $SLURM_ARRAY_TASK_ID'q;d' calls_gfdl_1.txt`
+linevar=`sed $SLURM_ARRAY_TASK_ID'q;d' calls_snow.txt`
 eval $linevar

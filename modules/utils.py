@@ -36,7 +36,7 @@ def round_latlon_degree(df, res):
     
     return df
 
-def select_months_ds(ds, mon_s, mon_e, time_varname):    
+def select_months_ds(ds, mon_s, mon_e, time_varname='time'):    
     # Select months from xarray dataset
     if mon_s > mon_e:
         idx = (ds[time_varname].dt.month >= mon_s) | (ds[time_varname].dt.month <= mon_e)

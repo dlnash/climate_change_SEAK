@@ -1,5 +1,5 @@
 """
-Filename:    trend_map_plot.py
+Filename:    ROS_trend_map_plot.py
 Author:      Deanna Nash, dnash@ucsd.edu
 Description: Script to plot trends for each variable across all models,
              with shared colorbars per column.
@@ -23,6 +23,7 @@ import cartopy.feature as cfeature
 # Path to modules
 sys.path.append('../modules/')
 import globalvars
+from plotter import make_brgr_white_cmap
 
 
 # ============================================================
@@ -62,18 +63,25 @@ def plot_trend_multi_models(models, varname, path_to_data,
         print(f"Processing {varname} for {model}...")
 
         # Load climatology
-        fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/{varname}_{model}_clim.nc")
+        fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/snow_{model}_ros_clim.nc")
         ds_clim = xr.open_dataset(fname)
+        # ds_clim = ds_clim.rename({'delsnowh': 'snowmelt'})
         if model == 'cfsr':
             cfsr_clim = ds_clim
-            yr_range = "(1980--2019)"
+            yr_range = "(1980-2019)"
         else:
             clim_diff = ds_clim - cfsr_clim
-            yr_range = "(2030--2060)"
+            yr_range = "(2030-2060)"
+
+        ds_clim['rain'].attrs['units'] = 'mm day-1'
+        ds_clim['delsnowh'].attrs['units'] = 'mm day-1'
+        ds_clim['ros_intensity'].attrs['units'] = 'mm day-1'
+        ds_clim['ros'].attrs['units'] = '#'
 
         # Load trend
-        trend_fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/{varname}_{model}_trends.nc")
+        trend_fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/rain_{model}_ros_trends.nc")
         ds_trend = xr.open_dataset(trend_fname)
+        # ds_trend = ds_trend.rename({'delsnowh': 'snowmelt'})
 
         lons = ds_clim.lon.values
         lats = ds_clim.lat.values
@@ -86,25 +94,32 @@ def plot_trend_multi_models(models, varname, path_to_data,
         ax0.add_feature(cfeature.BORDERS, edgecolor='0.4', linewidth=0.8)
 
         # pick contour levels and cmap
-        if varname == 'ivt':
-            cflevs = np.arange(150, 750, 100); cmap = cmo.deep
-        elif (varname == 'pcpt'):
-            cflevs = np.arange(0, 110, 10); cmap = cmo.rain
-        elif (varname == 'uv'):
-            cflevs = np.arange(0, 55, 5); cmap = cmo.dense
-        elif varname == 'freezing_level':
-            cflevs = np.arange(2500, 4600, 100)
-            cmap = cmocean.tools.crop_by_percent(cmo.ice, 20, which='min')
-        elif varname == 'snow':
-            cflevs = np.arange(0, 1100, 100); cmap = cmo.rain
+        if varname == 'ros':
+            cflevs = np.arange(0, 20, 1)
+            cmap = cmo.rain
+        else:
+            cflevs = np.arange(0, 110, 10)
+            cmap = cmo.rain
+        # elif (varname == 'delsnow'):
+        #     cflevs = np.arange(-25, 25, 5)
+        #     white_range = (-5, 5)
+        #     cmap, norm = make_brgr_white_cmap(cflevs, white_range) 
+        # elif (varname == 'delsnowh'):
+        #     cflevs = np.arange(-100, 120, 20)
+        #     white_range = (-20, 20)
+        #     cmap, norm = make_brgr_white_cmap(cflevs, white_range)
+        # elif varname == 'rain':
+        #     cflevs = np.arange(0, 110, 10)
+        #     cmap = cmo.rain
 
         cfield = ds_clim[varname].values
+        print(np.nanmin(cfield), np.nanmax(cfield))
         cf0 = ax0.contourf(lons, lats, cfield, transform=datacrs,
-                           levels=cflevs, cmap=cmap, extend='max')
+                           levels=cflevs, cmap=cmap, extend='both')
         cfs_clim.append(cf0)
 
         if i == 0:
-            ax0.set_title(f"{varname.upper()} avg 95th percentile", loc="center")
+            ax0.set_title(f"{varname.upper()} avg", loc="center")
         if i == nrows-1:
             ax0.set_xlabel("Longitude")
         if i == nrows//2:
@@ -119,44 +134,16 @@ def plot_trend_multi_models(models, varname, path_to_data,
         ax1.coastlines(resolution="50m")
         ax1.gridlines(draw_labels=False)
         ax1.add_feature(cfeature.BORDERS, edgecolor='0.4', linewidth=0.8)
-        cflevs_tr = np.arange(-20, 22, 4)
-        if varname in ["ivt", "uv"]:
-            if varname == "ivt":
-                ukey, vkey, pkey, ckey = "ivtu_trend", "ivtv_trend", "ivt_p", "ivt_trend"
-                qscale=10
-                # cflevs_tr = np.arange(-10, 12, 2)
-            else:
-                ukey, vkey, pkey, ckey = "u_trend", "v_trend", "uv_p", "u_trend"
-                qscale = 0.25
-                # cflevs_tr = np.arange(-10, 12, 2)
-
-            uvec = ds_trend[ukey].where(ds_trend[pkey] <= sig_level).values
-            vvec = ds_trend[vkey].where(ds_trend[pkey] <= sig_level).values
-            perc_change = (ds_trend[ckey].values *
-                           ds_trend.attrs['n_years'] /
-                           ds_clim[varname].values) * 100.
-
-            cf1 = ax1.contourf(lons, lats, perc_change, transform=datacrs,
-                               levels=cflevs_tr, cmap="BrBG", extend="both")
-            ax1.quiver(lons, lats, uvec, vvec, transform=datacrs,
-                       color="k", regrid_shape=13, pivot="middle",
-                       angles="xy", scale_units="xy", scale=qscale, units="xy")
-
-        else:
-            ckey = f"{varname}_trend"
-            pkey = f"{varname}_p"
-            field = ds_trend[ckey].where(ds_trend[pkey] <= sig_level).values
-
-            if (varname == "pcpt") | (varname == "snow"):
-                # cflevs_tr = np.arange(-40, 50, 10); 
-                cmap_tr = "BrBG"
-            elif varname == "freezing_level":
-                # cflevs_tr = np.arange(-10, 12, 2)
-                cmap_tr = cmocean.tools.crop_by_percent(cmo.balance, 20, which="both")
-
-            perc_change = (field*ds_trend.attrs['n_years']/ds_clim[varname].values)*100.
-            cf1 = ax1.contourf(lons, lats, perc_change, transform=datacrs,
-                               levels=cflevs_tr, cmap=cmap_tr, extend="both")
+        cflevs_tr = np.arange(-100, 110, 10)
+        
+        cmap_tr = 'BrBG'
+        ckey = f"{varname}_trend"
+        pkey = f"{varname}_p"
+        field = ds_trend[ckey].where(ds_trend[pkey] <= sig_level).values
+        
+        perc_change = (field*ds_trend.attrs['n_years']/ds_clim[varname].values)*100.
+        cf1 = ax1.contourf(lons, lats, perc_change, transform=datacrs,
+                           levels=cflevs_tr, cmap=cmap_tr, extend="both")
 
         cfs_trend.append(cf1)
 
@@ -172,26 +159,33 @@ def plot_trend_multi_models(models, varname, path_to_data,
             ax2.coastlines(resolution="50m")
             ax2.gridlines(draw_labels=False)
             ax2.add_feature(cfeature.BORDERS, edgecolor='0.4', linewidth=0.8)
-    
+            
             # pick contour levels and cmap
-            if varname == 'ivt':
-                cflevs = np.arange(-250, 300, 50)
-            elif (varname == 'pcpt'):
-                cflevs = np.arange(-20, 24, 4)
-            elif (varname == 'uv'):
+            if varname == 'ros':
                 cflevs = np.arange(-5, 6, 1)
-            elif varname == 'freezing_level':
-                cflevs = np.arange(-2000, 2250, 500)
-            elif varname == 'snow':
-                cflevs = np.arange(-500, 525, 50)
+                white_range = (-1, 1)
+            else:
+                cflevs = np.arange(-20, 24, 4)
+                white_range = (-4, 4)
+            # elif (varname == 'delsnow'):
+            #     cflevs = np.arange(-4, 5, 1)
+            #     white_range = (-1, 1)
+            # elif (varname == 'delsnowh'):
+            #     cflevs = np.arange(-4, 5, 1)
+            #     white_range = (-1, 1)
+            # elif varname == 'rain':
+            #     cflevs = np.arange(-20, 24, 4)
+            #     white_range = (-4, 4)
+
+            cmap, norm = make_brgr_white_cmap(cflevs, white_range)
     
             cfield = clim_diff[varname].values
             cf0 = ax2.contourf(lons, lats, cfield, transform=datacrs,
-                               levels=cflevs, cmap=cmo.balance, extend='both')
+                               levels=cflevs, cmap=cmap, norm=norm, extend='both')
             cfs_diff.append(cf0)
     
             if i == 1:
-                ax2.set_title(f"Future - CFSR 95th percentile", loc="center")
+                ax2.set_title(f"Future - CFSR", loc="center")
             if i == nrows-1:
                 ax2.set_xlabel("Longitude")
             if i == nrows//2:
@@ -211,7 +205,7 @@ def plot_trend_multi_models(models, varname, path_to_data,
     cb2.set_label(fr'$\Delta$ {varname.upper()} ({ds_clim[varname].attrs["units"]})', fontsize=10)
 
     # Save figure
-    outname = f"../figs/MODEL_COMPARISON_{varname}_clim_trend.png"
+    outname = f"../figs/ROS_MODEL_COMPARISON_{varname}_clim_trend.png"
     fig.savefig(outname, bbox_inches="tight", dpi=fig.dpi)
     plt.close(fig)
     print(f"Saved {outname}")
@@ -223,7 +217,7 @@ def plot_trend_multi_models(models, varname, path_to_data,
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
-    varnames = ["ivt", "pcpt", "freezing_level", "uv", "snow"]
+    varnames = ["ros", "ros_intensity", "delsnowh", "rain"]
 
     for varname in varnames:
         plot_trend_multi_models(models, varname, path_to_data,sig_level=1)

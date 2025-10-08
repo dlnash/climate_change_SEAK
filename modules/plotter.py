@@ -35,6 +35,46 @@ import itertools ## need this for the cbarticks
 ## import personal modules
 import cw3ecmaps as ccmaps
 
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap, BoundaryNorm
+
+def make_brgr_white_cmap(cflevs, white_range):
+    """
+    Create a 'BrGr'-style diverging colormap with white at the center.
+
+    Parameters
+    ----------
+    cflevs : array-like
+        Contour levels (e.g., np.arange(-10, 11, 2)).
+    white_range : tuple (low, high)
+        Range of values to make white (e.g., (-2, 2)).
+
+    Returns
+    -------
+    cmap : matplotlib.colors.ListedColormap
+        Custom colormap with white center.
+    norm : matplotlib.colors.BoundaryNorm
+        Normalization for use in contourf/pcolormesh.
+    """
+
+    # Use Brewer "BrBG" diverging colormap
+    base_cmap = plt.get_cmap('BrBG', len(cflevs) - 1)
+    colors = base_cmap(np.arange(len(cflevs) - 1))
+
+    # Identify color bins that fall inside the white range
+    mask = (cflevs[:-1] >= white_range[0]) & (cflevs[1:] <= white_range[1])
+
+    # Set those bins to white
+    colors[mask] = [1, 1, 1, 1]
+
+    # Build new colormap and norm
+    cmap = ListedColormap(colors)
+    norm = BoundaryNorm(cflevs, ncolors=cmap.N, clip=True)
+
+    return cmap, norm
+
+
 def plot_terrain(ax, ext):
     fname = '/expanse/nfs/cw3e/cwp140/downloads/ETOPO1_Bed_c_gmt4.grd'
     datacrs = ccrs.PlateCarree()

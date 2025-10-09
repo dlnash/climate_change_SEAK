@@ -79,7 +79,7 @@ def plot_trend_multi_models(models, varname, path_to_data,
         ds_clim['ros'].attrs['units'] = '#'
 
         # Load trend
-        trend_fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/rain_{model}_ros_trends.nc")
+        trend_fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/snow_{model}_ros_trends.nc")
         ds_trend = xr.open_dataset(trend_fname)
         # ds_trend = ds_trend.rename({'delsnowh': 'snowmelt'})
 

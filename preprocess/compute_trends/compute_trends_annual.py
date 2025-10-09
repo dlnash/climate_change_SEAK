@@ -100,7 +100,7 @@ def main(config_file: str, job_info: str):
     trend.attrs['n_years'] = int(n_years)
     
     # --- Save as netCDF ---
-    outdir = os.path.join(datadir, f"{varname}_{model}_ros_trends.nc")
+    outdir = os.path.join(datadir, f"snow_{model}_ros_trends.nc")
     trend.to_netcdf(path=outdir, mode = 'w', format='NETCDF4')
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@ import cartopy.feature as cfeature
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 import matplotlib.ticker as mticker
 import colorsys
-from matplotlib.colors import LinearSegmentedColormap # Linear interpolation for color maps
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap, BoundaryNorm # Linear interpolation for color maps
 import matplotlib.patches as mpatches
 import matplotlib.animation as animation
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -31,14 +31,34 @@ from datetime import timedelta
 import textwrap
 from matplotlib.gridspec import GridSpec
 import itertools ## need this for the cbarticks
+from matplotlib import font_manager as fm
 
 ## import personal modules
 import cw3ecmaps as ccmaps
+import globalvars
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap, BoundaryNorm
+def set_font(current_dpi, scaling_factor):
+    fm.fontManager.addfont(globalvars.path_to_repo+'modules/helvetica.ttc')
 
+    plt.rcParams.update({
+                    'font.family' : 'Helvetica',
+                    'figure.dpi': current_dpi,
+                    'font.size': 8 * scaling_factor, #changes axes tick label
+                    'axes.labelsize': 8 * scaling_factor,
+                    'axes.titlesize': 8 * scaling_factor,
+                    'xtick.labelsize': 8 * scaling_factor,#do nothing
+                    'ytick.labelsize': 8 * scaling_factor, #do nothing
+                    'legend.fontsize': 5 * scaling_factor,
+                    'lines.linewidth': 0.7 * scaling_factor,
+                    'axes.linewidth': 0.2 * scaling_factor,
+                    'legend.fontsize': 12 * scaling_factor,
+                    'xtick.major.width': 0.8 * scaling_factor,
+                    'ytick.major.width': 0.8 * scaling_factor,
+                    'xtick.minor.width': 0.6 * scaling_factor,
+                    'ytick.minor.width': 0.6 * scaling_factor,
+                    'lines.markersize': 6 * scaling_factor
+                })
+    
 def make_brgr_white_cmap(cflevs, white_range):
     """
     Create a 'BrGr'-style diverging colormap with white at the center.

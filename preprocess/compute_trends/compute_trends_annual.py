@@ -17,6 +17,7 @@ sys.path.append('../../modules/')
 import globalvars
 from wrf_utils import load_preprocessed_WRF_data
 from xarrayMannKendall import compute_MK_trend_da
+from wrf_preprocess import preprocess_WRF_ros
 
 def main(config_file: str, job_info: str):
     """Main preprocessing workflow."""
@@ -32,45 +33,8 @@ def main(config_file: str, job_info: str):
     # --- read the non-anomaly data ---
     ds = load_preprocessed_WRF_data(model, varname, anomaly=False)
 
-    # --- calculate rain (PCPT - SWE) ---
-    ds['rain'] = ds['pcpt'] - ds['snow']
-    
-    # --- update snow depth to mm ---
-    snowh_attrs = ds['snowh'].attrs
-    ds['snowh'] = ds['snowh'] * 1000
-    ds['snowh'].attrs = snowh_attrs
-    ds['snowh'].attrs['units'] = 'mm'
-    
-    # --- calculate ROS intensity ---
-    # ROS intensity is defined as the change in snow depth (snowh) for the ROS day
-    ds['delsnow'] = ds['snow'].diff(dim='time') # n+1 - n
-    ds['delsnowh'] = ds['snowh'].diff(dim='time') # n+1 - n
-    
-    # --- calculate ROS ---
-    # A ROS event is defined as a day when rain (pcpt) is greater than 5 mm d−1, 
-    # delta snowh (change in snow depth) decreases (< 0) and snow cover is true
-    # Create the mask and add it as a new variable called "ros"
-    ds['ros'] = ((ds['rain'] > 5) & (ds['delsnowh'] < 0) & (ds['snowc'] > 0)).astype(int)
-
-    # --- calculate ROS intensity --- 
-    # ROS intensity is the sum of rainfall (ds['rain']) and snowmelt (ds[delsnowh']*-1)
-    ds['ros_intensity'] = ds['rain'].where(ds['ros'] == 1) + (ds['delsnowh'].where(ds['ros'] == 1))*-1
-
-    # --- compute sum of rain-on-snow days per year ---
-    da_ros = ds['ros'].groupby("time.year").sum('time').rename(year="time")
-    
-    # --- compute change in rainfall and snowmelt during ROS events
-    rain_mask = ds['rain'].where(ds['ros'] == 1)
-    # negative delsnowh indicates snow decreased between today and tomorrow
-    # need to multiply by 1
-    snowmelt_mask = (ds['delsnowh'].where(ds['ros'] == 1))*-1 
-
-    da_rain = rain_mask.groupby("time.year").mean('time').rename(year="time")
-    da_snowmelt = snowmelt_mask.groupby("time.year").mean('time').rename(year="time")
-    da_ros_intensity = ds['ros_intensity'].groupby("time.year").mean('time').rename(year="time")
-
-    # --- merge into single dataset ---
-    ds = xr.merge([da_ros, da_rain, da_snowmelt, da_ros_intensity])
+    # --- compute ROS information ---
+    ds = preprocess_WRF_ros(ds, temporal_resolution='yearly')
 
     # --- get clim ---
     ds_clim = ds.mean('time')

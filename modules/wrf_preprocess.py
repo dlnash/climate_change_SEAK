@@ -192,3 +192,73 @@ def preprocess_WRF_freezing_level(ds: xr.Dataset, fname: str) -> xr.Dataset:
     
     return ds
 
+def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily') -> xr.Dataset:
+    """
+    Preprocess WRF dataset to compute rain-on-snow (ROS) diagnostics.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input WRF dataset (already preprocessed snow dataset).
+    temporal_resolution : str, optional
+        Temporal resolution of output. Options:
+        - 'daily' (default): returns daily time steps.
+        - 'yearly': aggregates ROS counts (sum) and other variables (mean) per year.
+
+    Returns
+    -------
+    xr.Dataset
+        Preprocessed dataset with variables:
+        - rain: rainfall (mm)
+        - delsnowh: daily snow depth change (mm)
+        - ros: binary indicator (1 = ROS event)
+        - ros_intensity: combined rainfall + snowmelt (mm)
+        If yearly, variables are aggregated accordingly.
+    """
+
+    # --- Rain (PCPT - SWE) ---
+    ds['rain'] = ds['pcpt'] - ds['snow']
+    ds['rain'].attrs['units'] = 'mm'
+
+    # --- Convert snow depth to mm ---
+    ds['snowh'] = ds['snowh'] * 1000
+    ds['snowh'].attrs.update({'units': 'mm', 'long_name': 'Snow depth'})
+
+    # --- Snow change per timestep ---
+    ds['delsnow'] = ds['snow'].diff('time')
+    ds['delsnowh'] = ds['snowh'].diff('time')
+    ds['delsnowh'].attrs.update({'units': 'mm', 'long_name': 'Change in snow depth'})
+
+    # --- Rain-on-snow (ROS) indicator ---
+    ds['ros'] = ((ds['rain'] > 5) & (ds['delsnowh'] < 0) & (ds['snowc'] > 0)).astype(int)
+    ds['ros'].attrs.update({'long_name': 'Rain-on-snow event', 'description': '1 = ROS event'})
+
+    # --- ROS intensity (rain + snowmelt) ---
+    ds['ros_intensity'] = ds['rain'].where(ds['ros'] == 1) + (ds['delsnowh'].where(ds['ros'] == 1)) * -1
+    ds['ros_intensity'].attrs.update({'units': 'mm', 'long_name': 'ROS intensity (rain + snowmelt)'})
+
+    # --- Temporal aggregation ---
+    if temporal_resolution.lower() == 'yearly':
+        grouped = ds.groupby('time.year')
+
+        # Sum ROS events per year
+        da_ros = grouped['ros'].sum('time').rename({'year': 'time'})
+
+        # Average other variables per year
+        da_rain = grouped['rain'].mean('time').rename({'year': 'time'})
+        da_snow = grouped['snow'].mean('time').rename({'year': 'time'})
+        da_snowmelt = (grouped['delsnowh'].mean('time') * -1).rename({'year': 'time'})
+        da_ros_intensity = grouped['ros_intensity'].mean('time').rename({'year': 'time'})
+
+        # Merge yearly data
+        ds_out = xr.merge([da_ros, da_rain, da_snow, da_snowmelt, da_ros_intensity])
+
+    elif temporal_resolution.lower() == 'daily':
+        ds_out = ds  # retain daily data
+
+    else:
+        raise ValueError("temporal_resolution must be either 'daily' or 'yearly'.")
+
+    return ds_out
+
+

@@ -1,0 +1,20 @@
+# Filename:    ERA5_config.yml
+# Author:      Deanna Nash, dnash@ucsd.edu
+# Description: Dictionary of different download variables/options for ERA5
+# for use in conjunction with getERA5_batch.py and download_ERA5.sh
+
+---
+ivt_hourly: 
+    data_type: 'reanalysis-era5-single-levels'
+    levels: 
+    var_name: ['vertical_integral_of_northward_water_vapour_flux', 'vertical_integral_of_eastward_water_vapour_flux']
+    start_yr: 2024
+    end_yr: 2024
+    month: ['01']
+    day: ['01']
+    time: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00']
+    area: [65, -165., 35., -120.] # [N,W,S,E] Default: global
+    grid: [0.25, 0.25]
+    datadir: '/cw3e/mead/projects/cwp140/data/downloads/ERA5/'
+    fprefix: '201901_IVT'
+...

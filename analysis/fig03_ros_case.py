@@ -105,20 +105,18 @@ mapcrs = ccrs.Mercator()
 ax1 = fig.add_subplot(gs[0, 1:])
 
 # Ensure arrays are 1D
-rain = np.squeeze(ds_point['rain'].to_numpy())
-snow = np.squeeze(ds_point['snow'].to_numpy())
+prec = np.squeeze(ds_point['pcpt'].to_numpy())
+deltaswe = np.squeeze(ds_point['delsnow'].to_numpy())
 time = pd.to_datetime(ds_point['time'].values)
 ivt_ts = ds_point['ivt'].values
 deltasnowh = ds_point['delsnowh'].values
 ros = ds_point['ros'].values
 
-# Define a scalar width (not an array!)
-bar_width = 1.0  # This must be a single float
-
-# Plot stacked bars
-x = np.arange(len(time))
-ax1.bar(x, rain, color='#1f77b4', width=0.8, label='Rain (mm)')
-ax1.bar(x, snow, bottom=rain, color='#89CFF0', width=0.8, label='Snow (mm)')
+# Plot bars
+bar_width = 0.4
+x = np.arange(len(time))  # or use time index if it's regular daily
+ax1.bar(x - bar_width/2, prec, color='#1f77b4', width=bar_width, label='Precip (mm)')
+ax1.bar(x + bar_width/2, deltaswe, color='#89CFF0', width=bar_width, label='ΔSWE (mm)')
 ax1.set_xticks(x)
 ax1.set_xticklabels([pd.to_datetime(t).strftime('%b %d') for t in time.values])
 

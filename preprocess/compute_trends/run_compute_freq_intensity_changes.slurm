@@ -10,10 +10,10 @@
 #SBATCH --job-name=compute_trends
 #SBATCH --mail-type=ALL # Type of email notification- BEGIN,END,FAIL,ALL
 #SBATCH --mail-user=dnash@ucsd.edu # Email to which notifications will be sent
-#SBATCH --array=1-3%3 # runs jobs x-y, 100 at a time
+#SBATCH --array=1-75%75 # runs jobs x-y, 100 at a time
 
 # Activate Anaconda work environment
 source /home/dnash/miniconda3/envs/SEAK-impacts/etc/conda/activate.d/*
  
-linevar=`sed $SLURM_ARRAY_TASK_ID'q;d' calls_frequency.txt`
+linevar=`sed $SLURM_ARRAY_TASK_ID'q;d' calls_all.txt`
 eval $linevar

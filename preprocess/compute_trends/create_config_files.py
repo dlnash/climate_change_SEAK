@@ -1,56 +1,69 @@
 ######################################################################
 # Filename:    create_job_configs.py
 # Author:      Deanna Nash dnash@ucsd.edu
-# Description: Script to create .yaml configuration file to run job_array with slurm for preprocessing WRF Data
-#
+# Description: Create a single YAML configuration and call file
+#              (plus grouped call files by model and variable)
+#              to run job_array with Slurm for WRF data preprocessing.
 ######################################################################
 
 import yaml
+from collections import defaultdict
 
-MAX_JOBS_PER_FILE = 999
+# ---------------- Configuration ----------------
 conda_path = "/home/dnash/miniconda3/envs/SEAK-impacts/bin/python"
+script_name = "compute_frequency_intensity_changes.py"  # update if needed
+
 models = ["ccsm", "gfdl", "cfsr"]
-varnames = ['ivt', 'pcpt', 'freezing_level', 'uv925', 'snow']
+varnames = ["ivt", "pcpt", "freezing_level", "uv925", "snow"]
+seasons = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
+
+# ---------------- Build job dictionary ----------------
+config_dict = {}
+job_counter = 0
+
+# Group trackers for call files
+calls_by_model = defaultdict(list)
+calls_by_var = defaultdict(list)
 
 for model in models:
-
-    jobcounter = 0
-    filecounter = 0
-    d_lst = []
-    njob_lst = []
-
     for varname in varnames:
-        jobcounter += 1
-        d_lst.append({
-            f"job_{jobcounter}": {
+        for ssn in seasons:
+            job_counter += 1
+            job_id = f"job_{job_counter}"
+            config_dict[job_id] = {
                 "model": model,
-                "varname": varname
+                "varname": varname,
+                "season": ssn,
             }
-        })
 
-        if jobcounter == MAX_JOBS_PER_FILE:
-            filecounter += 1
-            dest = {k: v for dd in d_lst for k, v in dd.items()}
-            njob_lst.append(len(d_lst))
-            with open(f"config_{model}_{filecounter}.yaml", "w") as f:
-                yaml.dump(dest, f, allow_unicode=True)
-            jobcounter = 0
-            d_lst = []
+            call_cmd = f"{conda_path} -u {script_name} config_all.yaml {job_id}"
+            calls_by_model[model].append(call_cmd)
+            calls_by_var[varname].append(call_cmd)
 
-    # write remaining jobs
-    if d_lst:
-        filecounter += 1
-        dest = {k: v for dd in d_lst for k, v in dd.items()}
-        njob_lst.append(len(d_lst))
-        with open(f"config_{model}_{filecounter}.yaml", "w") as f:
-            yaml.dump(dest, f, allow_unicode=True)
+# ---------------- Write master config ----------------
+config_filename = "config_all.yaml"
+with open(config_filename, "w") as f:
+    yaml.dump(config_dict, f, allow_unicode=True)
+print(f"Wrote {config_filename} with {job_counter} jobs.")
 
-    # create calls files
-    for i, njobs in enumerate(njob_lst):
-        call_lines = [
-            f"{conda_path} -u compute_trends.py config_{model}_{i+1}.yaml 'job_{j}'"
-            for j in range(1, njobs + 1)
-        ]
-        with open(f"calls_{model}_{i+1}.txt", "w", encoding="utf-8") as f:
-            f.write("\n".join(call_lines))
+# ---------------- Write master call file ----------------
+call_filename = "calls_all.txt"
+all_calls = [cmd for lst in calls_by_model.values() for cmd in lst]
+with open(call_filename, "w", encoding="utf-8") as f:
+    f.write("\n".join(all_calls))
+print(f"Wrote {call_filename} with {job_counter} job calls.")
 
+# ---------------- Write grouped call files ----------------
+for model, cmds in calls_by_model.items():
+    fname = f"calls_{model}.txt"
+    with open(fname, "w", encoding="utf-8") as f:
+        f.write("\n".join(cmds))
+    print(f"  → Wrote {fname} ({len(cmds)} jobs)")
+
+for varname, cmds in calls_by_var.items():
+    fname = f"calls_{varname}.txt"
+    with open(fname, "w", encoding="utf-8") as f:
+        f.write("\n".join(cmds))
+    print(f"  → Wrote {fname} ({len(cmds)} jobs)")
+
+print("All grouped and master call files created successfully.")

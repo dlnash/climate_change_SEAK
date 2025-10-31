@@ -25,7 +25,7 @@ from plotter import set_font
 # ============================================================
 # Plot Function
 # ============================================================
-def plot_clim_diff_grid(models, varnames, path_to_data,
+def plot_clim_diff_grid(models, varnames, ssn, path_to_data,
                         lonmin=-141., lonmax=-130.,
                         latmin=54.5, latmax=60.):
     """
@@ -58,7 +58,7 @@ def plot_clim_diff_grid(models, varnames, path_to_data,
     # --- Load reference CFSR climatology once ---
     cfsr_ds = {}
     for var in varnames:
-        fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/{var}_cfsr_clim.nc")
+        fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/{var}_cfsr_{ssn}_95th_percentile_clim.nc")
         cfsr_ds[var] = xr.open_dataset(fname)
 
     # ============================================================
@@ -79,23 +79,23 @@ def plot_clim_diff_grid(models, varnames, path_to_data,
         # ----------------------------
         if varname == 'ivt':
             levs_clim = np.arange(150, 425, 25); cmap_clim = cmo.deep
-            levs_diff = np.arange(0, 165, 15)
+            levs_diff = np.arange(0, 132, 12)
             cmap_diff = cmo.deep
         elif varname == 'uv':
-            levs_clim = np.arange(0, 55, 5); cmap_clim = cmo.dense
+            levs_clim = np.arange(0, 33, 3); cmap_clim = cmo.dense
             levs_diff = np.arange(-5, 6, 1)
             cmap_diff = cmo.balance
         elif varname == 'freezing_level':
-            levs_clim = np.arange(2500, 3600, 100)
+            levs_clim = np.arange(0, 2600, 250)
             cmap_clim = cmocean.tools.crop_by_percent(cmo.ice, 20, which='min')
-            levs_diff = np.arange(0, 1100, 100)
+            levs_diff = np.arange(0, 660, 60)
             cmap_diff = 'Reds'
         elif varname == 'pcpt':
             levs_clim = np.arange(0, 110, 10); cmap_clim = cmo.rain
             levs_diff = np.arange(-20, 24, 4)
             cmap_diff = 'BrBG'
         elif varname == 'snow':
-            levs_clim = np.arange(0, 1100, 100); cmap_clim = cmo.rain
+            levs_clim = np.arange(0, 2200, 200); cmap_clim = cmo.rain
             levs_diff = np.arange(-500, 525, 100)
             cmap_diff = 'BrBG'
         else:
@@ -146,7 +146,7 @@ def plot_clim_diff_grid(models, varnames, path_to_data,
             ax.add_feature(cfeature.BORDERS, linewidth=0.75, edgecolor='k')
             # ax.gridlines(draw_labels=False)
 
-            fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/{varname}_{model}_clim.nc")
+            fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/{varname}_{model}_{ssn}_95th_percentile_clim.nc")
             ds_model = xr.open_dataset(fname)
             diff = ds_model[varname] - cfsr_ds[varname][varname]
             cf = ax.contourf(lons, lats, diff, levels=levs_diff, cmap=cmap_diff,
@@ -171,7 +171,7 @@ def plot_clim_diff_grid(models, varnames, path_to_data,
     # ============================================================
     # Save Figure
     # ============================================================
-    outname = f"../figs/MODEL_DIFF_GRID.png"
+    outname = f"../figs/clim/{ssn}_95th_percentile_clim.png"
     fig.savefig(outname, bbox_inches="tight", dpi=300)
     plt.close(fig)
     print(f"Saved figure: {outname}")
@@ -184,4 +184,8 @@ if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
     varnames = ["ivt", "uv", "freezing_level", "pcpt", "snow"]
-    plot_clim_diff_grid(models, varnames, path_to_data)
+    ssn_lst = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
+    ssn_lst = ["NDJFMA"]
+    for ssn in ssn_lst:
+        print(f"Creating plot for {ssn}")
+        plot_clim_diff_grid(models, varnames, ssn, path_to_data)

@@ -192,7 +192,7 @@ def preprocess_WRF_freezing_level(ds: xr.Dataset, fname: str) -> xr.Dataset:
     
     return ds
 
-def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily') -> xr.Dataset:
+def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', option='strict') -> xr.Dataset:
     """
     Preprocess WRF dataset to compute rain-on-snow (ROS) diagnostics.
 
@@ -204,6 +204,10 @@ def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily') -> xr
         Temporal resolution of output. Options:
         - 'daily' (default): returns daily time steps.
         - 'yearly': aggregates ROS counts (sum) and other variables (mean) per year.
+    option : str
+        Option to define ROS. Options:
+        - 'strict' (default): Precipitation must exceed 25.4 mm, Snow Cover must be True, and Change in SWE must exceed 6.35 mm
+        - 'flexible': Precitation must exceed 5 mm, Snow Cover must be True, and any decrease in Snow Depth 
 
     Returns
     -------
@@ -226,7 +230,10 @@ def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily') -> xr
     ds['delsnowh'].attrs.update({'units': 'mm', 'long_name': 'Change in snow depth'})
 
     # --- Rain-on-snow (ROS) indicator ---
-    ds['ros'] = ((ds['pcpt'] > 25.4) & (ds['snowc'] > 0) & (ds['delsnow'] > 6.35)).astype(int)
+    if option == 'strict':
+        ds['ros'] = ((ds['pcpt'] > 25.4) & (ds['snowc'] > 0) & (ds['delsnow'] > 6.35) & (ds['delsnowh'] > 25.4)).astype(int) # strict
+    elif option == 'flexible':
+        ds['ros'] = ((ds['pcpt'] > 25.4) & (ds['snowc'] > 0) & (ds['delsnowh'] > 6.35)).astype(int) # flexible
     ds['ros'].attrs.update({'long_name': 'Rain-on-snow event', 'description': '1 = ROS event'})
 
     # --- ROS intensity (rain + snowmelt) ---

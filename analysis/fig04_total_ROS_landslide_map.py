@@ -30,19 +30,24 @@ from wrf_utils import load_preprocessed_WRF_data
 from wrf_preprocess import preprocess_WRF_ros
 
 # ---------------------------------------------------------------------
+# Update ROS choice
+# ---------------------------------------------------------------------
+option = 'flexible' # strict or flexible
+
+# ---------------------------------------------------------------------
 # Load Data
 # ---------------------------------------------------------------------
 # --- read the non-anomaly snow data ---
 ds = load_preprocessed_WRF_data('cfsr', 'snow', anomaly=False)
 
 # --- compute ROS information ---
-ds = preprocess_WRF_ros(ds, temporal_resolution='daily')
+ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option)
 
 # --- Sum over time: number of ROS days per grid cell ---
 ros_sum = ds['ros'].sum(dim='time')
 
 # --- read summary of landslide information --- 
-df = pd.read_csv('../out/landslide_summary.csv')
+df = pd.read_csv(f'../out/landslide_summary_{option}.csv')
 # Sort so that points with ar=1 and ros=1 are plotted last
 df = df.sort_values(by=['max_ros'], ascending=[True])
 # ---------------------------------------------------------------------
@@ -89,15 +94,14 @@ ax = draw_basemap(
 
 # --- Contour plot ---
 # Define contour levels for discrete ROS counts (0, 1, 2, 3)
-levels = np.arange(1, 330, 30)  # finer levels between 0–3
+levels = np.arange(0, 550, 50)  # finer levels between 0–3
 cmap = plt.get_cmap('Blues')
 
 cf = ax.contourf(
     ros_sum['lon'], ros_sum['lat'], ros_sum.values,
     levels=levels,
     cmap=cmap,
-    vmin=0, vmax=300,
-    extend='neither',
+    extend='max',
     transform=ccrs.PlateCarree()
 )
 
@@ -139,7 +143,7 @@ ros_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None',
 
 # --- Add legend to plot ---
 ax.legend(handles=[ar_handle, non_ar_handle, ros_handle],
-          loc='upper left', frameon=True, fontsize=8, title='Landslide Type')
+          loc='lower left', frameon=True, fontsize=8, title='Landslide Type')
     
 # ---------------------------------------------------------------------
 # Colorbar and Save Figure
@@ -148,7 +152,7 @@ cb = fig.colorbar(cf, cax=cax, orientation='vertical')
 cb.set_label('Number of ROS Days (1980-2019)', fontsize=11)
 cb.ax.tick_params(labelsize=10)
 
-output_path = Path('../figs/cfsr_ros_landslide.png')
+output_path = Path(f'../figs/cfsr_ros_landslide_{option}.png')
 fig.savefig(output_path, bbox_inches='tight', dpi=fig.dpi)
 
 print(f"Saved figure to: {output_path.resolve()}")

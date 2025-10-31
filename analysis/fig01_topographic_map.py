@@ -6,26 +6,27 @@ Description: Plot a topographic map of Southeast Alaska with labeled terrain fea
 """
 
 # --- Standard Library Imports ---
-import sys
+import sys, os
 from pathlib import Path
 import textwrap
 
 # --- Third-Party Imports ---
 import numpy as np
 import xarray as xr
+import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.patheffects as pe
 import matplotlib.gridspec as gridspec
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.feature import ShapelyFeature
 
 # --- Personal Modules ---
 sys.path.append('../modules')
 from plotter import draw_basemap, set_font
 import globalvars
 from wrf_utils import filter_vars
-
 
 # ---------------------------------------------------------------------
 # Helper Functions
@@ -46,24 +47,29 @@ def make_land_cmap(vmin=0, vmax=3000):
 data_path = Path(globalvars.path_to_data) / 'downloads' / 'SEAK-WRF' / 'geo_southeast.nc'
 elev = xr.open_dataset(data_path)
 elev = filter_vars(elev.squeeze(), data_path, "hgt")
+elev = elev.hgt
+
+# --- load shapefile and subset ---
+fp = os.path.join(globalvars.path_to_data, 'downloads/AK_climate_divisions/AK_divisions_NAD83.shp')
+polys = gpd.read_file(fp)
+keep_names = ["Northeast Gulf", "North Panhandle", "Central Panhandle", "South Panhandle"]
+polys = polys[polys["Name"].isin(keep_names)]
+polys = polys.to_crs(epsg=4326)
 
 # ---------------------------------------------------------------------
 # Map and Label Definitions
 # ---------------------------------------------------------------------
-communities = {
-    'Hoonah': (-135.4519, 58.1122, 'center'),
-    'Skagway': (-135.3277, 59.4538, 'left'),
-    'Klukwan': (-135.8894, 59.3988, 'right'),
-    'Yakutat': (-139.6710, 59.5121, 'center'),
-    'Craig': (-133.1358, 55.4769, 'right'),
-    'Kasaan': (-132.4009, 55.5400, 'left'),
-}
 
 feature_labels = {
-    'Lynn Canal': (-135.1132, 58.7004),
-    'Dixon Entrance': (-131.5954, 54.7378),
-    'Gulf of Alaska': (-138.0, 57.5),
-    'Glacier Bay National Park and Preserve': (-137.1026, 58.43),
+    'Chichagof Island': (-135.833242, 57.7),
+    'Baranof Island': (-135.2, 56.971734)
+}
+
+label_offsets = {
+    "Northeast Gulf": {"dx": 110, "dy": -80},  # southwest of centroid
+    "North Panhandle": {"dx": 0, "dy": 0},       # east of centroid
+    "Central Panhandle": {"dx": 0, "dy": 0},     # east
+    "South Panhandle": {"dx": 0, "dy": 0},       # east
 }
 
 datacrs = ccrs.PlateCarree()
@@ -105,23 +111,40 @@ ax = draw_basemap(
     mask_ocean=True, coastline=False
 )
 
+ax.set_extent(extent, crs=datacrs)  # extent in lon/lat degrees
+ax.set_aspect('auto')  # or 'equal' if you want correct lat/lon ratio
+
 # Plot topography
 cf = ax.pcolormesh(
-    elev.lon, elev.lat, elev.hgt.where(elev.hgt > 0),
+    elev.lon, elev.lat, elev.where(elev > 0),
     rasterized=False, cmap=cmap, norm=norm,
     transform=datacrs, alpha=0.6
 )
 
-# Plot community markers and labels
-for name, (x, y, ha) in communities.items():
-    ax.plot(x, y, 'ro', markersize=5, transform=datacrs, zorder=201)
+# Plot Climate Divisions
+polys.crs = 'epsg:4326'
+ec_lst = ['tab:red', 'tab:blue', 'tab:orange', 'tab:purple']
+for idx, (i, poly) in enumerate(polys.iterrows()):
+    feature = ShapelyFeature([poly.geometry], ccrs.PlateCarree(),
+                             edgecolor=ec_lst[idx], facecolor='none', linewidth=1.)
+    ax.add_feature(feature, zorder=200)
+
+    geom = poly.geometry
+    centroid = geom.centroid
+    offsets = label_offsets.get(poly["Name"], {"dx": 0, "dy": 0})
+    print(poly["Name"], offsets, centroid.x, centroid.y)
     ax.annotate(
-        name, (x, y), xytext=(0, 12),
+        poly["Name"],
+        xy=(centroid.x, centroid.y),
+        xytext=(offsets["dx"], offsets["dy"]),  # shift in points
         textcoords="offset points",
-        ha=ha,
-        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="k", lw=0.5, alpha=0.8),
-        xycoords=datacrs._as_mpl_transform(ax),
-        zorder=200,
+        transform=datacrs,
+        fontweight="bold",
+        ha="center",
+        va="center",
+        color=ec_lst[idx],
+        path_effects=[pe.withStroke(linewidth=1, foreground="white")],
+        zorder=215
     )
 
 # Plot geographic feature labels
@@ -133,6 +156,7 @@ for label, (x, y) in feature_labels.items():
         textcoords="offset points",
         xytext=(0, 0),
         ha='center',
+        fontsize=8,
         xycoords=datacrs._as_mpl_transform(ax),
         path_effects=[pe.withStroke(linewidth=1.25, foreground="white")],
         zorder=200,

@@ -49,7 +49,7 @@ def find_nearest_indices(ds, lat, lon):
 # ---------------------------------------------------------------------
 # --- WRF data ---
 ds = load_preprocessed_WRF_data('cfsr', 'snow', anomaly=False)
-ds = preprocess_WRF_ros(ds, temporal_resolution='daily')
+ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option="flexible")
 ivt = load_preprocessed_WRF_data('cfsr', 'ivt', anomaly=False)
 ds = xr.merge([ds, ivt], compat="no_conflicts")
 
@@ -109,7 +109,7 @@ prec = np.squeeze(ds_point['pcpt'].to_numpy())
 deltaswe = np.squeeze(ds_point['delsnow'].to_numpy())
 time = pd.to_datetime(ds_point['time'].values)
 ivt_ts = ds_point['ivt'].values
-deltasnowh = ds_point['delsnowh'].values
+deltasnowh = ds_point['delsnowh'].values*-1
 ros = ds_point['ros'].values
 
 # Plot bars
@@ -260,6 +260,6 @@ cb = fig.colorbar(cf_ivt, cax=cax, orientation='vertical')
 cb.set_label('IVT (kg m$^{-1}$ s$^{-1}$)', fontsize=11)
 cb.ax.tick_params(labelsize=10)
 
-output_path = Path('../figs/fig4_ros_case.png')
+output_path = Path('../figs/ros_case.png')
 fig.savefig(output_path, bbox_inches='tight', dpi=fig.dpi)
 print(f"✅ Saved figure to: {output_path.resolve()}")

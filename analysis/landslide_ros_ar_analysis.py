@@ -30,6 +30,11 @@ from wrf_preprocess import preprocess_WRF_ros
 from plotter import set_font
 
 # ---------------------------------------------------------------------
+# Update ROS choice
+# ---------------------------------------------------------------------
+option = 'strict' # strict or flexible
+
+# ---------------------------------------------------------------------
 # Helper Functions
 # ---------------------------------------------------------------------
 def find_nearest_indices(ds, lat, lon):
@@ -113,7 +118,7 @@ if __name__ == "__main__":
 
     # --- Load WRF data once ---
     ds = load_preprocessed_WRF_data('cfsr', 'snow', anomaly=False)
-    ds = preprocess_WRF_ros(ds, temporal_resolution='daily')
+    ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option)
     ivt = load_preprocessed_WRF_data('cfsr', 'ivt', anomaly=False)
     ds = xr.merge([ds, ivt], compat="no_conflicts")
 
@@ -123,7 +128,7 @@ if __name__ == "__main__":
     ar_ds = ar_ds.assign_coords({"lon": (((ar_ds.lon + 180) % 360) - 180)}).sortby('lon')
 
     # --- Prepare outputs ---
-    figs_dir = Path('../figs/landslides/')
+    figs_dir = Path(f'../figs/landslides_{option}/')
     figs_dir.mkdir(parents=True, exist_ok=True)
     summary = []
 
@@ -141,8 +146,9 @@ if __name__ == "__main__":
 
         # Subset AR data
         ar = ar_ds.sel(time=slice(start_date, end_date))
-        ar = ar.sel(lat=lat, lon=lon, method='nearest')
-        ar = ar.resample(time="1D").max()
+        # ar = ar.sel(lat=lat, lon=lon, method='nearest')
+        ar = ar.sel(lat=slice(lat+1, lat-1), lon=slice(lon-1, lon+1))
+        ar = ar.resample(time="1D").max(["lat", "lon"])
         ar_mask = (ar > 0).values.squeeze()
 
         # Save figure
@@ -163,5 +169,5 @@ if __name__ == "__main__":
 
     # --- Save summary DataFrame ---
     summary_df = pd.DataFrame(summary)
-    summary_df.to_csv('../out/landslide_summary.csv', index=False)
+    summary_df.to_csv(f'../out/landslide_summary_{option}.csv', index=False)
     print(f"✅ Saved summary to: {figs_dir / 'landslide_summary.csv'}")

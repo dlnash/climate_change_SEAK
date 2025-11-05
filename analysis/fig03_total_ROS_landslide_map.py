@@ -45,6 +45,7 @@ ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option)
 
 # --- Sum over time: number of ROS days per grid cell ---
 ros_sum = ds['ros'].sum(dim='time')
+print(ros_sum.values.max())
 
 # --- read summary of landslide information --- 
 df = pd.read_csv(f'../out/landslide_summary_{option}.csv')
@@ -94,11 +95,11 @@ ax = draw_basemap(
 
 # --- Contour plot ---
 # Define contour levels for discrete ROS counts (0, 1, 2, 3)
-levels = np.arange(0, 550, 50)  # finer levels between 0–3
+levels = np.arange(1, 28, 2)  # finer levels between 0–3
 cmap = plt.get_cmap('Blues')
 
 cf = ax.contourf(
-    ros_sum['lon'], ros_sum['lat'], ros_sum.values,
+    ros_sum['lon'], ros_sum['lat'], ros_sum.values/38.,
     levels=levels,
     cmap=cmap,
     extend='max',
@@ -149,7 +150,7 @@ ax.legend(handles=[ar_handle, non_ar_handle, ros_handle],
 # Colorbar and Save Figure
 # ---------------------------------------------------------------------
 cb = fig.colorbar(cf, cax=cax, orientation='vertical')
-cb.set_label('Number of ROS Days (1980-2019)', fontsize=11)
+cb.set_label('Mean ROS Frequency (days yr$^{-1}$)', fontsize=11)
 cb.ax.tick_params(labelsize=10)
 
 output_path = Path(f'../figs/cfsr_ros_landslide_{option}.png')

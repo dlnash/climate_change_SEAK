@@ -22,7 +22,7 @@ from pathlib import Path
 # Add path to custom modules
 sys.path.append('../modules/')
 import globalvars
-from wrf_utils import wrf_prepare_for_rio
+from wrf_rio import wrf_prepare_for_rio
 
 # ---------------------------------------------------------------------
 # Process

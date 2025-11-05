@@ -246,7 +246,7 @@ def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', optio
         da_ros = ds['ros'].groupby('time.year').sum('time')
     
         # --- 2. Identify which variables to average ---
-        vars_to_process = ['pcpt', 'delsnow', 'delsnowh', 'ros_intensity']
+        vars_to_process = ['pcpt', 'snow', 'delsnow', 'delsnowh', 'ros_intensity']
     
         yearly_means = []
         for var in vars_to_process:
@@ -270,6 +270,7 @@ def compute_ros_frequency(ds):
     vars_info = [
         ('pcpt', 25.4, 'Precip'),
         ('delsnow', 6.35, 'ΔSWE'),
+        ('snow', 6.35, 'SWE'),
         ('ivt', 250., 'IVT'),
         ('delsnowh', 25.4, 'Snowmelt'),
     ]

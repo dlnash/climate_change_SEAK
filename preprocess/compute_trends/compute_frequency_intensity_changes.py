@@ -65,7 +65,7 @@ def main(config_file: str, job_info: str):
                     'ivt': ('ivt', 'kg m$^{-1}$ s$^{-1}$'),
                     'pcpt': ('pcpt', 'mm day$^{-1}$'),
                     'freezing_level': ('freezing_level', 'm'),
-                    'snow': ('snow', 'kg m$^{-2}$'),
+                    'snow': ('snow', 'mm day$^{-1}$'),
                 }
     varname, units = units_dict.get(varname, (varname, ''))
     ds_95th[varname].attrs['units'] = units

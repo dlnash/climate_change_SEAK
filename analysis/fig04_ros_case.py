@@ -94,19 +94,92 @@ gs = gridspec.GridSpec(
     height_ratios=[1, 1],
     wspace=0.05, hspace=0.08
 )
-cax = fig.add_subplot(gs[-1, -1])  # colorbar axis
+cax = fig.add_subplot(gs[0, -1])  # colorbar axis
 
 datacrs = ccrs.PlateCarree()
 mapcrs = ccrs.Mercator()
 
 # ---------------------------------------------------------------------
-# Plot ROS Time Series (Panel 1)
+# (1) Landslide Image Panel
 # ---------------------------------------------------------------------
-ax1 = fig.add_subplot(gs[0, 1:])
+ax_img = fig.add_subplot(gs[0, 0])
+image = mpimg.imread('../img_landslide.jpg')
+ax_img.imshow(image)
+ax_img.axis('off')
+
+# ---------------------------------------------------------------------
+# (2) IVT Map Panel (North Pacific)
+# ---------------------------------------------------------------------
+ax_ivt = fig.add_subplot(gs[0, 1], projection=mapcrs)
+ax_ivt.set_extent([-160, -125, 37, 60], crs=datacrs)
+
+for feat in [cfeature.COASTLINE, cfeature.BORDERS]:
+    ax_ivt.add_feature(feat, lw=0.8)
+ax_ivt.add_feature(cfeature.LAND, facecolor='lightgray', zorder=0)
+ax_ivt.add_feature(cfeature.OCEAN, facecolor='white', zorder=0)
+
+levels_ivt = np.arange(250, 950, 100)
+cf_ivt = ax_ivt.contourf(
+    ivt['lon'], ivt['lat'], ivt['IVT'],
+    levels=levels_ivt, cmap=cmo.deep,
+    transform=datacrs, extend='neither'
+)
+
+# IVT vectors
+uvec = ivt['uIVT']
+vvec = ivt['vIVT']
+mask = ivt['IVT'] >= 250
+
+Q = ax_ivt.quiver(
+    ivt['lon'], ivt['lat'],
+    uvec.where(mask).values, vvec.where(mask).values,
+    transform=datacrs,
+    color='k',
+    regrid_shape=15,
+    scale=7000  # bigger = shorter arrows
+)
+ax_ivt.quiverkey(Q, X=0.8, Y=0.03, U=250, label='250 kg m$^{-1}$ s$^{-1}$',
+                 labelpos='E', coordinates='axes', fontproperties={'size':6})
+
+
+# --- add landslide point ---
+ax_ivt.plot(lon_lst[0], lat_lst[0], 'ro', alpha=0.4,
+            markersize=5, transform=datacrs, zorder=201)
+
+# ---------------------------------------------------------------------
+# (3) ROS Map Panel (Southeast Alaska)
+# ---------------------------------------------------------------------
+ax_ros = fig.add_subplot(gs[1, 0], projection=mapcrs)
+ax_ros.set_extent([-141, -130, 54.5, 60], crs=datacrs)
+
+# Base map
+for feat in [cfeature.COASTLINE, cfeature.BORDERS]:
+    ax_ros.add_feature(feat, lw=0.8)
+ax_ros.add_feature(cfeature.LAND, facecolor='lightgray', zorder=0)
+ax_ros.add_feature(cfeature.OCEAN, facecolor='white', zorder=0)
+
+# Contour plot
+levels_ros = np.arange(1, 6, 3)
+cf_ros = ax_ros.contourf(
+    ds['lon'], ds['lat'], ds['ros'].sum('time'),
+    levels=levels_ros, cmap='Blues',
+    transform=datacrs, extend='neither'
+)
+
+ax_ros.plot(lon_lst[0], lat_lst[0], 'ro', alpha=0.4,
+            markersize=5, transform=datacrs, zorder=201)
+
+
+
+
+# ---------------------------------------------------------------------
+# (4) Plot ROS Time Series
+# ---------------------------------------------------------------------
+ax1 = fig.add_subplot(gs[1, 1:])
 
 # Ensure arrays are 1D
 prec = np.squeeze(ds_point['pcpt'].to_numpy())
-deltaswe = np.squeeze(ds_point['delsnow'].to_numpy())
+swe = np.squeeze(ds_point['snow'].to_numpy())
 time = pd.to_datetime(ds_point['time'].values)
 ivt_ts = ds_point['ivt'].values
 deltasnowh = ds_point['delsnowh'].values*-1
@@ -116,7 +189,7 @@ ros = ds_point['ros'].values
 bar_width = 0.4
 x = np.arange(len(time))  # or use time index if it's regular daily
 ax1.bar(x - bar_width/2, prec, color='#1f77b4', width=bar_width, label='Precip (mm)')
-ax1.bar(x + bar_width/2, deltaswe, color='#89CFF0', width=bar_width, label='ΔSWE (mm)')
+ax1.bar(x + bar_width/2, swe, color='#89CFF0', width=bar_width, label='SWE (mm)')
 ax1.set_xticks(x)
 ax1.set_xticklabels([pd.to_datetime(t).strftime('%b %d') for t in time.values])
 
@@ -166,82 +239,15 @@ ax1.grid(True, linestyle='--', linewidth=0.5, alpha=0.4)
 pos = ax1.get_position()
 ax1.set_position([pos.x0 + 0.05, pos.y0 + 0.015, pos.width * 0.9, pos.height * 0.925])
 
-# ---------------------------------------------------------------------
-# (2) ROS Map Panel (Southeast Alaska)
-# ---------------------------------------------------------------------
-ax_ros = fig.add_subplot(gs[0, 0], projection=mapcrs)
-ax_ros.set_extent([-141, -130, 54.5, 60], crs=datacrs)
-
-# Base map
-for feat in [cfeature.COASTLINE, cfeature.BORDERS]:
-    ax_ros.add_feature(feat, lw=0.8)
-ax_ros.add_feature(cfeature.LAND, facecolor='lightgray', zorder=0)
-ax_ros.add_feature(cfeature.OCEAN, facecolor='white', zorder=0)
-
-# Contour plot
-levels_ros = np.arange(1, 6, 3)
-cf_ros = ax_ros.contourf(
-    ds['lon'], ds['lat'], ds['ros'].sum('time'),
-    levels=levels_ros, cmap='Blues',
-    transform=datacrs, extend='neither'
-)
-
-ax_ros.plot(lon_lst[0], lat_lst[0], 'ro', alpha=0.4,
-            markersize=5, transform=datacrs, zorder=201)
-
-# ---------------------------------------------------------------------
-# (3) IVT Map Panel (North Pacific)
-# ---------------------------------------------------------------------
-ax_ivt = fig.add_subplot(gs[1, 1], projection=mapcrs)
-ax_ivt.set_extent([-160, -125, 37, 60], crs=datacrs)
-
-for feat in [cfeature.COASTLINE, cfeature.BORDERS]:
-    ax_ivt.add_feature(feat, lw=0.8)
-ax_ivt.add_feature(cfeature.LAND, facecolor='lightgray', zorder=0)
-ax_ivt.add_feature(cfeature.OCEAN, facecolor='white', zorder=0)
-
-levels_ivt = np.arange(250, 950, 100)
-cf_ivt = ax_ivt.contourf(
-    ivt['lon'], ivt['lat'], ivt['IVT'],
-    levels=levels_ivt, cmap=cmo.deep,
-    transform=datacrs, extend='neither'
-)
-
-# IVT vectors
-uvec = ivt['uIVT']
-vvec = ivt['vIVT']
-mask = ivt['IVT'] >= 250
-
-Q = ax_ivt.quiver(
-    ivt['lon'], ivt['lat'],
-    uvec.where(mask).values, vvec.where(mask).values,
-    transform=datacrs,
-    color='k',
-    regrid_shape=15,
-    scale=7000  # bigger = shorter arrows
-)
-ax_ivt.quiverkey(Q, X=0.8, Y=0.03, U=250, label='250 kg m$^{-1}$ s$^{-1}$',
-                 labelpos='E', coordinates='axes', fontproperties={'size':6})
 
 
-# --- add landslide point ---
-ax_ivt.plot(lon_lst[0], lat_lst[0], 'ro', alpha=0.4,
-            markersize=5, transform=datacrs, zorder=201)
-
-# ---------------------------------------------------------------------
-# (4) Landslide Image Panel
-# ---------------------------------------------------------------------
-ax_img = fig.add_subplot(gs[1, 0])
-image = mpimg.imread('../img_landslide.jpg')
-ax_img.imshow(image)
-ax_img.axis('off')
 
 # ---------------------------------------------------------------------
 # Add a, b, c labels
 # ---------------------------------------------------------------------
 labels = list(string.ascii_lowercase)  # ['a', 'b', 'c', ...]
 bbox_dict = dict(facecolor='white', edgecolor='k', boxstyle='circle,pad=0.3', alpha=1.)
-axes = [ax_ros, ax1, ax_img, ax_ivt]  # your panel axes
+axes = [ax_img, ax_ivt, ax_ros, ax1]  # your panel axes
 
 # Loop over axes and labels
 for ax, label in zip(axes, labels):

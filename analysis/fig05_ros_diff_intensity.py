@@ -74,7 +74,7 @@ def plot_ros_diff_intensity(models, varnames, ssn, option, path_to_data,
         lats = cfsr_ds.lat.values
 
         # Get base field and color levels
-        levs_clim, cmap_clim, levs_diff, cmap_diff = get_colormap_and_levels("ros_intensity_clim", varname)
+        levs_clim, cmap_clim, norm_clim, levs_diff, cmap_diff, norm_diff = get_colormap_and_levels("ros_intensity_clim", varname)
 
         # ============================================================
         # --- Column 1: CFSR Climatology ---
@@ -87,8 +87,8 @@ def plot_ros_diff_intensity(models, varnames, ssn, option, path_to_data,
         
         
         cfield = cfsr_ds[varname].values
-        cf0 = ax0.contourf(lons, lats, cfield, levels=levs_clim, cmap=cmap_clim,
-                           transform=datacrs, extend='max')
+        cf0 = ax0.contourf(lons, lats, cfield, levels=levs_clim, cmap=cmap_clim, norm=norm_clim,
+                           transform=datacrs, extend='both')
         
         if i == 0:
             ax0.set_title(f"CFSR")
@@ -117,8 +117,8 @@ def plot_ros_diff_intensity(models, varnames, ssn, option, path_to_data,
             fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/snow_{model}_{ssn}_{option}_ros_intensity_clim.nc")
             ds_model = xr.open_dataset(fname)
             diff = ds_model[varname] - cfsr_ds[varname]
-            cf = ax.contourf(lons, lats, diff, levels=levs_diff, cmap=cmap_diff,
-                             norm=norm, transform=datacrs, extend='both')
+            cf = ax.contourf(lons, lats, diff, levels=levs_diff, cmap=cmap_diff, norm=norm_diff,
+                             transform=datacrs, extend='both')
             diff_handles.append(cf)
             if i == 0:
                 ax.set_title(f"{model.upper()} - CFSR")

@@ -99,14 +99,17 @@ def main(config_file: str, job_info: str):
     save_netcdf(ds_95th, model, varname, season, option=None, filename_suffix="95th_percentile_clim")
 
     if varname == 'snow':
-        option_lst = ['strict', 'flexible']
-        for option in option_lst:
-            # --- compute ROS intensity ---
-            compute_ros_intensity(ds, option, season, model)
-        
-            # --- compute ROS frequency ---
-            save_ros_frequency(ds, option, season, model)
-            
+        # Work with clean copies so nothing carries over between runs
+        ds_strict = ds.copy(deep=True)
+        ds_flexible = ds.copy(deep=True)
+    
+        # Compute for 'strict'
+        compute_ros_intensity(ds_strict, 'strict', season, model)
+        save_ros_frequency(ds_strict, 'strict', season, model)
+    
+        # Compute for 'flexible'
+        compute_ros_intensity(ds_flexible, 'flexible', season, model)
+        save_ros_frequency(ds_flexible, 'flexible', season, model)
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

@@ -29,6 +29,43 @@ from wrf_utils import filter_vars
 from colormaps import get_colormap_and_levels
 
 # ---------------------------------------------------------------------
+# Helper Code
+# ---------------------------------------------------------------------
+def get_visible_percentile_range(ax, x, y, values, prange=(2, 98)):
+    """
+    Compute vmin and vmax for color scaling based on the visible region of a plot.
+
+    Parameters
+    ----------
+    ax : matplotlib Axes
+        The axes whose current x/y limits define the visible region.
+    x, y : array-like
+        The data coordinates (same as used in the plot).
+    values : array-like
+        The data values used for coloring (e.g., C in hexbin).
+    prange : tuple, optional
+        Percentile range (default is (2, 98)) to clip outliers.
+
+    Returns
+    -------
+    vmin, vmax : float
+        Color scale limits for the visible region.
+    """
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    mask = (x >= xlim[0]) & (x <= xlim[1]) & (y >= ylim[0]) & (y <= ylim[1])
+
+    subset = np.asarray(values)[mask]
+    subset = subset[np.isfinite(subset)]  # drop NaNs/Infs
+
+    if subset.size == 0:
+        return np.nan, np.nan
+
+    vmin, vmax = np.nanpercentile(subset, prange)
+    return vmin, vmax
+
+
+# ---------------------------------------------------------------------
 # Process
 # ---------------------------------------------------------------------
 def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type):
@@ -111,10 +148,19 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
         cfield = cfsr_ds[varname][varname].values.flatten()[mask]
 
         # Get base field and color levels
-        levs_clim, cmap_clim, levs_diff, cmap_diff = get_colormap_and_levels(fsuffix, varname)
+        levs_clim, cmap_clim, norm_clim, levs_diff, cmap_diff, norm_diff = get_colormap_and_levels(fsuffix, varname)
+
 
         # --- Column 1: CFSR scatter ---
         ax0 = fig.add_subplot(gs[i, 0])
+
+        # Make your hexbin first (or define the plot limits before calling)
+        ax0.set_xlim(0, 3300)
+        ax0.set_ylim(54.5, 60)
+        
+        # Compute vmin/vmax based on visible region
+        vmin, vmax = get_visible_percentile_range(ax0, x_flat, y_flat, cfield)
+        print(f"CFSR, {varname}, {vmin}, {vmax}")
 
         if plot_type == "hexbin":
             sc0 = ax0.hexbin(
@@ -136,15 +182,13 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
         if i == nrows - 1:
             ax0.set_xlabel("Elevation (m)")
         ax0.set_ylabel("Latitude (°N)")
-        ax0.set_ylim(54.5, 60)
-        ax0.set_xlim(0, 3300)
         ax0.text(0.05, 0.95, labels[label_idx], transform=ax0.transAxes,
                  va='top', ha='left', bbox=bbox_dict)
         label_idx += 1
 
         # --- Colorbar for CFSR Plots ---
         cbax_cfsr = fig.add_subplot(gs[i, 1])
-        cb0 = Colorbar(ax=cbax_cfsr, mappable=sc0, orientation="vertical")
+        cb0 = Colorbar(ax=cbax_cfsr, mappable=sc0, orientation="vertical", extend='both')
         if (fsuffix == "95th_percentile_clim") | (fsuffix == "ros_intensity_clim"):
             cb0.set_label(f"{varname_lbl[i]} ({cfsr_ds[varname][varname].attrs.get('units', '')})")
         else:
@@ -170,6 +214,14 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
                 continue
             
             diff = (ds_model[varname] - cfsr_ds[varname][varname]).values.flatten()[mask]
+            
+            # or define the plot limits first
+            ax.set_xlim(0, 3300)
+            ax.set_ylim(54.5, 60)
+            
+            # Compute vmin/vmax based on visible region
+            vmin, vmax = get_visible_percentile_range(ax, x_flat, y_flat, diff)
+            print(f"{model}, {varname}, {vmin}, {vmax}")
 
             if plot_type == "hexbin":
                 sc = ax.hexbin(
@@ -192,8 +244,6 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
             if i == nrows - 1:
                 ax.set_xlabel("Elevation (m)")
             
-            ax.set_ylim(54.5, 60)
-            ax.set_xlim(0, 3300)
             ax.set_yticklabels([])
             ax.text(0.05, 0.95, labels[label_idx], transform=ax.transAxes,
                     va='top', ha='left', bbox=bbox_dict)
@@ -201,7 +251,7 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
 
         # --- Colorbar for Difference Plots ---
         cbax_diff = fig.add_subplot(gs[i, -1])
-        cb1 = Colorbar(ax=cbax_diff, mappable=diff_handles[0], orientation="vertical")
+        cb1 = Colorbar(ax=cbax_diff, mappable=diff_handles[0], orientation="vertical", extend='both')
         if (fsuffix == "95th_percentile_clim") | (fsuffix == "ros_intensity_clim"):
             cb1.set_label(f"Δ{varname_lbl[i]} ({cfsr_ds[varname][varname].attrs.get('units', '')})")
         else:

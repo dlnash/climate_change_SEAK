@@ -17,13 +17,16 @@ overleafdir="/cw3e/mead/projects/cwp140/repos/SEAK_climate_change_manuscript"  #
 fig_names=(
     "topographic_map"
     "clim/NDJFMA_95th_percentile_clim"
-    "cfsr_ros_landslide_strict"
+    "clim/NDJFMA_95th_percentile_clim_hexbin"
+    "cfsr_ros_landslide_flexible"
     "ros_case"
-    "ros_strict/NDJFMA/NDJFMA_ROS_FREQ_DIFF"
-    "ros_strict/NDJFMA/NDJFMA_ROS_INTENSITY_DIFF"
+    "ros_flexible/NDJFMA/NDJFMA_ROS_FREQ_DIFF"
+    "ros_flexible/NDJFMA/NDJFMA_ros_frequency_clim_hexbin"
+    "ros_flexible/NDJFMA/NDJFMA_ROS_INTENSITY_DIFF"
+    "ros_flexible/NDJFMA/NDJFMA_ros_frequency_clim_hexbin"
 )
 
-fig_nums=(1 2 3 4 5 6)
+fig_nums=(1 2 3 4 5 6 7 8 9)
 
 # --- Ensure directories exist ---
 mkdir -p "$finaldir"

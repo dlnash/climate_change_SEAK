@@ -21,6 +21,7 @@ import sys
 sys.path.append('../modules/')
 import globalvars
 from plotter import set_font
+from colormaps import get_colormap_and_levels
 
 # ============================================================
 # Plot Function
@@ -74,35 +75,8 @@ def plot_clim_diff_grid(models, varnames, ssn, path_to_data,
         lons = cfsr_ds[varname].lon.values
         lats = cfsr_ds[varname].lat.values
 
-        # ----------------------------
         # Get base field and color levels
-        # ----------------------------
-        if varname == 'ivt':
-            levs_clim = np.arange(150, 425, 25); cmap_clim = cmo.deep
-            levs_diff = np.arange(0, 132, 12)
-            cmap_diff = cmo.deep
-        elif varname == 'uv':
-            levs_clim = np.arange(0, 33, 3); cmap_clim = cmo.dense
-            levs_diff = np.arange(-5, 6, 1)
-            cmap_diff = cmo.balance
-        elif varname == 'freezing_level':
-            levs_clim = np.arange(0, 2600, 250)
-            cmap_clim = cmocean.tools.crop_by_percent(cmo.ice, 20, which='min')
-            levs_diff = np.arange(0, 660, 60)
-            cmap_diff = 'Reds'
-        elif varname == 'pcpt':
-            levs_clim = np.arange(0, 110, 10); cmap_clim = cmo.rain
-            levs_diff = np.arange(-20, 24, 4)
-            cmap_diff = 'BrBG'
-        elif varname == 'snow':
-            levs_clim = np.arange(0, 2200, 200); cmap_clim = cmo.rain
-            levs_diff = np.arange(-500, 525, 100)
-            cmap_diff = 'BrBG'
-        else:
-            levs_clim = np.linspace(0, 1, 10)
-            levs_diff = np.linspace(-1, 1, 10)
-            cmap_clim = cmo.tempo
-            cmap_diff = cmo.balance
+        levs_clim, cmap_clim, levs_diff, cmap_diff = get_colormap_and_levels("95th_percentile_clim", varname)
 
         # ============================================================
         # --- Column 1: CFSR Climatology ---

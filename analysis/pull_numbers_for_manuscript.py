@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Filename:    pull_numbers_for_manuscript.py
 Author:      Deanna Nash (adapted for multi-model comparison)
@@ -27,7 +28,7 @@ from wrf_rio import wrf_prepare_for_rio
 # ---------------------------------------------------------------------
 # Process
 # ---------------------------------------------------------------------
-def compute_area_avg_max_min(models, ssn, path_to_data, fsuffix):
+def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
     """
     Compute area-averaged statistics for each model and variable, including
     model minus CFSR differences.
@@ -38,6 +39,8 @@ def compute_area_avg_max_min(models, ssn, path_to_data, fsuffix):
         Model names (first should be 'cfsr' for baseline)
     ssn : str
         Season label (e.g., 'DJF')
+    option: str
+        choice in ROS category ('strict' or 'flexible')
     path_to_data : str
         Path to data directory
     fsuffix : str
@@ -50,10 +53,10 @@ def compute_area_avg_max_min(models, ssn, path_to_data, fsuffix):
     """
 
     # --- define variable names for each suffix ---
-    if fsuffix == "flexible_ros_frequency_clim":
-        varnames = ['ros', 'ivt', 'pcpt', 'delsnow', 'delsnowh']
-    elif fsuffix == "flexible_ros_intensity_clim":
-        varnames = ["ros", "pcpt", "delsnow", "delsnowh", "ros_intensity"]
+    if fsuffix == "ros_frequency_clim":
+        varnames = ['ros', 'ivt', 'pcpt', 'snow', 'delsnow', 'delsnowh']
+    elif fsuffix == "ros_intensity_clim":
+        varnames = ["ros", "pcpt", "snow", "delsnow", "delsnowh", "ros_intensity"]
     elif fsuffix == "95th_percentile_clim":
         varnames = ["ivt", "uv", "freezing_level", "pcpt", "snow"]
     else:
@@ -73,7 +76,7 @@ def compute_area_avg_max_min(models, ssn, path_to_data, fsuffix):
         if fsuffix == "95th_percentile_clim":
             cfsr_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/{varname}_cfsr_{ssn}_{fsuffix}.nc")
         else:
-            cfsr_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/snow_cfsr_{ssn}_{fsuffix}.nc")
+            cfsr_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/snow_cfsr_{ssn}_{option}_{fsuffix}.nc")
 
         if not os.path.exists(cfsr_path):
             print(f"⚠️ Missing CFSR file for {varname}: {cfsr_path}")
@@ -99,7 +102,7 @@ def compute_area_avg_max_min(models, ssn, path_to_data, fsuffix):
             if fsuffix == "95th_percentile_clim":
                 model_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/{varname}_{model}_{ssn}_{fsuffix}.nc")
             else:
-                model_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/snow_{model}_{ssn}_{fsuffix}.nc")
+                model_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/snow_{model}_{ssn}_{option}_{fsuffix}.nc")
 
             if not os.path.exists(model_path):
                 print(f"⚠️ Missing file: {model_path}")
@@ -173,16 +176,19 @@ if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
     ssn_lst = ["NDJFMA"]
-    fsuffix_lst = ["95th_percentile_clim", "flexible_ros_intensity_clim", "flexible_ros_frequency_clim"]
+    options = ["strict", "flexible"]
 
-    all_results = []
-    for fsuffix in fsuffix_lst:
-        for ssn in ssn_lst:
-            print(f"Processing {fsuffix} for {ssn}")
-            df = compute_area_avg_max_min(models, ssn, path_to_data, fsuffix)
-            all_results.append(df)
-
-    final_df = pd.concat(all_results, ignore_index=True)
-    outfile = os.path.join(path_to_data, "processed_summary_stats_with_diffs.csv")
-    final_df.to_csv(outfile, index=False)
-    print(f"\n✅ Saved summary statistics with differences to {outfile}")
+    for option in options:
+        fsuffix_lst = ["95th_percentile_clim", "ros_intensity_clim", "ros_frequency_clim"]
+    
+        all_results = []
+        for fsuffix in fsuffix_lst:
+            for ssn in ssn_lst:
+                print(f"Processing {fsuffix} for {ssn}")
+                df = compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix)
+                all_results.append(df)
+    
+        final_df = pd.concat(all_results, ignore_index=True)
+        outfile = os.path.join(path_to_data, f"processed_summary_stats_with_diffs_{option}.csv")
+        final_df.to_csv(outfile, index=False)
+        print(f"\n✅ Saved summary statistics with differences to {outfile}")

@@ -13,6 +13,7 @@ from wrf import interplevel
 
 from wrf_utils import filter_vars
 from time_helpers import find_date_based_on_filename
+from utils import get_startmon_and_endmon, select_months_ds
 
 def calc_IVT_manual(ds):
     '''
@@ -192,7 +193,7 @@ def preprocess_WRF_freezing_level(ds: xr.Dataset, fname: str) -> xr.Dataset:
     
     return ds
 
-def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', option='strict') -> xr.Dataset:
+def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', option='strict', season='NDJFMA') -> xr.Dataset:
     """
     Preprocess WRF dataset to compute rain-on-snow (ROS) diagnostics.
 
@@ -238,7 +239,11 @@ def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', optio
 
     # --- ROS intensity (rain + snowmelt) ---
     ds['ros_intensity'] = ds['pcpt'].where(ds['ros'] == 1) + (ds['delsnowh'].where(ds['ros'] == 1)) 
-    ds['ros_intensity'].attrs.update({'units': 'mm', 'long_name': 'ROS intensity (prec + snowmelt)'})
+    ds['ros_intensity'].attrs.update({'units': 'mm day$^{-1}$', 'long_name': 'ROS intensity (prec + snowmelt)'})
+
+    # --- subset to specified season ---
+    mon_s, mon_e = get_startmon_and_endmon(season)
+    ds = select_months_ds(ds, mon_s, mon_e, time_varname='time')
 
     # --- Temporal aggregation ---
     if temporal_resolution.lower() == 'yearly':
@@ -271,16 +276,17 @@ def compute_ros_frequency(ds):
         ('pcpt', 25.4, 'Precip'),
         ('delsnow', 6.35, 'ΔSWE'),
         ('snow', 6.35, 'SWE'),
-        ('ivt', 250., 'IVT'),
+        ('ivt', 250, 'IVT'),
         ('delsnowh', 25.4, 'Snowmelt'),
     ]
-
-    freq_lst = [ds['ros'].groupby('time.year').sum('time').rename({'year': 'time'})]
+    ros = ds['ros'].groupby('time.year').sum('time').rename({'year': 'time'})
+    ros.attrs['units'] = "ROS (days yr$^{{-1}}$)"
+    freq_lst = [ros]
 
     for var, thres, label in vars_info:
         exceed = ds[var] > thres
         freq = exceed.groupby('time.year').sum('time').rename({'year': 'time'})
-        freq.attrs['units'] = f"days yr$^{{-1}}$ {label} > {int(thres)}"
+        freq.attrs['units'] = f"days yr$^{{-1}}$ {label} > {thres}"
         freq_lst.append(freq)
 
     ds_out = xr.merge(freq_lst).mean('time', keep_attrs=True)

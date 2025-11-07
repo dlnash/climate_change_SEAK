@@ -20,7 +20,8 @@ from matplotlib.colorbar import Colorbar
 import sys
 sys.path.append('../modules/')
 import globalvars
-from plotter import set_font, make_brgr_white_cmap
+from plotter import set_font
+from colormaps import get_colormap_and_levels
 
 # ============================================================
 # Plot Function
@@ -59,12 +60,6 @@ def plot_ros_diff_intensity(models, varnames, ssn, option, path_to_data,
     fname = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/snow_cfsr_{ssn}_{option}_ros_intensity_clim.nc")
     cfsr_ds = xr.open_dataset(fname)
 
-    cfsr_ds['pcpt'].attrs['units'] = 'mm day-1'
-    cfsr_ds['delsnow'].attrs['units'] = 'mm day-1'
-    cfsr_ds['delsnowh'].attrs['units'] = 'mm day-1'
-    cfsr_ds['ros_intensity'].attrs['units'] = 'mm day-1'
-    cfsr_ds['ros'].attrs['units'] = '#'
-
     # ============================================================
     # MAIN LOOP
     # ============================================================
@@ -78,29 +73,8 @@ def plot_ros_diff_intensity(models, varnames, ssn, option, path_to_data,
         lons = cfsr_ds.lon.values
         lats = cfsr_ds.lat.values
 
-        # ----------------------------
         # Get base field and color levels
-        # ----------------------------
-        if (varname == 'ros'):
-            levs_clim = np.arange(0, 11, 1)
-            cmap_clim = cmo.rain
-            levs_diff = np.arange(-5, 6, 1)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-1, 1))
-        elif (varname == 'pcpt'):
-            levs_clim = np.arange(0, 110, 10)
-            cmap_clim = cmo.rain
-            levs_diff = np.arange(-20, 24, 4)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-4, 4))
-        elif (varname == 'delsnow'):
-            levs_clim = np.arange(0, 44, 4)
-            cmap_clim = cmo.rain
-            levs_diff = np.arange(-20, 24, 4)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-4, 4))
-        else:
-            levs_clim = np.arange(0, 220, 20)
-            cmap_clim = cmo.rain
-            levs_diff = np.arange(-40, 48, 8)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-8, 8))
+        levs_clim, cmap_clim, levs_diff, cmap_diff = get_colormap_and_levels("ros_intensity_clim", varname)
 
         # ============================================================
         # --- Column 1: CFSR Climatology ---
@@ -175,7 +149,7 @@ def plot_ros_diff_intensity(models, varnames, ssn, option, path_to_data,
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
-    varnames = ["ros", "pcpt", "delsnow", "delsnowh", "ros_intensity"]
+    varnames = ["ros", "pcpt", "snow", "delsnowh", "ros_intensity"]
     ssn_lst = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
     ssn_lst = ["NDJFMA"]
     option_lst = ['strict', 'flexible']

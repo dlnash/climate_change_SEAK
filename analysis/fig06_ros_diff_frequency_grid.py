@@ -20,7 +20,8 @@ from matplotlib.colorbar import Colorbar
 import sys
 sys.path.append('../modules/')
 import globalvars
-from plotter import set_font, make_brgr_white_cmap
+from plotter import set_font
+from colormaps import get_colormap_and_levels
 
 # ============================================================
 # Plot Function
@@ -72,29 +73,8 @@ def plot_ros_diff_frequency(models, varnames, ssn, option, path_to_data,
         lons = cfsr_ds.lon.values
         lats = cfsr_ds.lat.values
 
-        # ----------------------------
         # Get base field and color levels
-        # ----------------------------
-        if (varname == 'ros'):
-            levs_clim, cmap_clim = np.arange(0, 11, 1), cmo.rain
-            levs_diff = np.arange(-5, 6, 1)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-1, 1))
-        elif (varname == 'ivt'):
-            levs_clim, cmap_clim = np.arange(0, 44, 4), cmo.deep
-            levs_diff = np.arange(-20, 24, 4)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-4, 4))
-        elif (varname == 'pcpt'):
-            levs_clim, cmap_clim = np.arange(0, 88, 8), cmo.rain
-            levs_diff = np.arange(-10, 12, 2)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-2, 2))
-        elif (varname == 'delsnow'):
-            levs_clim, cmap_clim = np.arange(0, 55, 5), cmo.rain
-            levs_diff = np.arange(-20, 24, 4)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-2, 2))
-        elif (varname == 'delsnowh'):
-            levs_clim, cmap_clim = np.arange(0, 220, 20), cmo.rain
-            levs_diff = np.arange(-40, 48, 8)
-            cmap_diff, norm = make_brgr_white_cmap(levs_diff, (-8, 8))
+        levs_clim, cmap_clim, levs_diff, cmap_diff = get_colormap_and_levels("ros_frequency_clim", varname)
 
         # ============================================================
         # --- Column 1: CFSR Climatology ---
@@ -120,7 +100,10 @@ def plot_ros_diff_frequency(models, varnames, ssn, option, path_to_data,
         # --- CFSR colorbar (vertical to the right) ---
         cbax_cfsr = fig.add_subplot(gs[i, 1])
         cb0 = Colorbar(ax=cbax_cfsr, mappable=cf0, orientation="vertical")
-        cb0.set_label(f"{varname_lbl[i]} (days yr$^{{-1}}$)")
+        if varname == 'ros':
+            cb0.set_label(f"ROS (days yr$^{{-1}}$)")
+        else:
+            cb0.set_label(f"{cfsr_ds[varname].attrs.get('units', '')}")
 
         # ============================================================
         # --- Columns 2 & 3: CCSM & GFDL Differences ---
@@ -171,7 +154,7 @@ def plot_ros_diff_frequency(models, varnames, ssn, option, path_to_data,
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
-    varnames = ['ros', 'ivt', 'pcpt', 'delsnow', 'delsnowh']
+    varnames = ['ros', 'ivt', 'pcpt', 'snow', 'delsnowh']
     ssn_lst = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
     ssn_lst = ["NDJFMA"]
     option_lst = ['strict', 'flexible']

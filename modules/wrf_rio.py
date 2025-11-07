@@ -6,6 +6,7 @@ Description: Function for aligning shapefile and netCDF.
 """
 import sys, os
 import xarray as xr
+import numpy as np
 import rioxarray
 from pyproj import CRS
 import globalvars

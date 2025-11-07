@@ -33,6 +33,31 @@ def save_netcdf(ds, model, varname, season, option, filename_suffix):
     ds.to_netcdf(path=outpath, mode='w', format='NETCDF4')
     print(f"Saved: {outpath}")
 
+def compute_ros_intensity(ds, option, season, model):
+    ds_ros_yearly = preprocess_WRF_ros(ds, temporal_resolution='yearly', option=option, season=season).mean('time')
+    units_dict = {
+                'ros': 'days yr$^{-1}$',
+                'pcpt': 'mm day$^{-1}$',
+                'snow': 'mm day$^{-1}$',
+                'delsnowh': 'mm day$^{-1}$',
+                'ros_intensity': 'mm day$^{-1}$',
+            }
+
+    for var, units in units_dict.items():
+        if var in ds_ros_yearly:
+            ds_ros_yearly[var].attrs['units'] = units
+
+    save_netcdf(ds_ros_yearly, model, 'snow', season, option, "ros_intensity_clim")
+
+def save_ros_frequency(ds, option, season, model):
+    ds_ros_daily = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option, season=season)
+    ivt = load_preprocessed_WRF_data(model, 'ivt', anomaly=False)
+    mon_s, mon_e = get_startmon_and_endmon(season)
+    ivt = select_months_ds(ivt, mon_s, mon_e, time_varname='time')
+    ds_ros_daily = xr.merge([ds_ros_daily, ivt], compat="no_conflicts")
+    ds_out = compute_ros_frequency(ds_ros_daily)
+    save_netcdf(ds_out, model, 'snow', season, option, "ros_frequency_clim")
+
 
 def main(config_file: str, job_info: str):
     """Main preprocessing workflow."""
@@ -51,10 +76,10 @@ def main(config_file: str, job_info: str):
 
     # --- subset to specified season ---
     mon_s, mon_e = get_startmon_and_endmon(season)
-    ds = select_months_ds(ds, mon_s, mon_e, time_varname='time')
+    ds_ssn = select_months_ds(ds, mon_s, mon_e, time_varname='time')
 
     # --- compute 95th percentile for var for each year ---
-    ds_95th = ds.groupby("time.year").quantile(0.95, dim="time").rename(year="time")
+    ds_95th = ds_ssn.groupby("time.year").quantile(0.95, dim="time").rename(year="time")
 
     # --- get clim ---
     ds_95th = ds_95th.mean('time')
@@ -77,16 +102,11 @@ def main(config_file: str, job_info: str):
         option_lst = ['strict', 'flexible']
         for option in option_lst:
             # --- compute ROS intensity ---
-            ds_ros_yearly = preprocess_WRF_ros(ds, temporal_resolution='yearly', option=option).mean('time')
-            save_netcdf(ds_ros_yearly, model, 'snow', season, option, "ros_intensity_clim")
+            compute_ros_intensity(ds, option, season, model)
         
             # --- compute ROS frequency ---
-            ds_ros_daily = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option)
-            ivt = load_preprocessed_WRF_data(model, 'ivt', anomaly=False)
-            ivt = select_months_ds(ivt, mon_s, mon_e, time_varname='time')
-            ds = xr.merge([ds_ros_daily, ivt], compat="no_conflicts")
-            ds_out = compute_ros_frequency(ds)
-            save_netcdf(ds_out, model, 'snow', season, option, "ros_frequency_clim")
+            save_ros_frequency(ds, option, season, model)
+            
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:

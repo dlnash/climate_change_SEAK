@@ -10,9 +10,9 @@ models = ["ccsm", "gfdl", "cfsr"]
 for model in models:
     # set year ranges depending on model
     if model in ["ccsm", "gfdl"]:
-        yr_start, yr_end = 2030, 2060
+        yr_start, yr_end = 2031, 2060
     elif model == "cfsr":
-        yr_start, yr_end = 1980, 2019
+        yr_start, yr_end = 1981, 2019
     else:
         continue  # skip unknown models
 

@@ -15,7 +15,7 @@ script_name = "compute_frequency_intensity_changes.py"  # update if needed
 
 models = ["ccsm", "gfdl", "cfsr"]
 varnames = ["ivt", "pcpt", "freezing_level", "uv925", "snow"]
-seasons = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
+seasons = ["ONDJFM"]
 
 # ---------------- Build job dictionary ----------------
 config_dict = {}

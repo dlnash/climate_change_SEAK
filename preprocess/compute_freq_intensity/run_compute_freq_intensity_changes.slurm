@@ -15,5 +15,5 @@
 # Activate Anaconda work environment
 source /home/dnash/miniconda3/envs/SEAK-impacts/etc/conda/activate.d/*
  
-linevar=`sed $SLURM_ARRAY_TASK_ID'q;d' calls_snow.txt`
+linevar=`sed $SLURM_ARRAY_TASK_ID'q;d' calls_all.txt`
 eval $linevar

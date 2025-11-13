@@ -63,7 +63,7 @@ def plot_ros_diff_frequency(models, varnames, ssn, option, path_to_data,
     # ============================================================
     # MAIN LOOP
     # ============================================================
-    varname_lbl = ['ROS', 'IVT', 'Precip', 'SWE', 'Snowmelt']
+    varname_lbl = ['ROS', 'IVT', 'Precip', 'ΔSWE', 'Snowmelt']
     labels = list(string.ascii_lowercase)  # ['a', 'b', 'c', ...]
     label_idx = 0
     bbox_dict = dict(facecolor='white', edgecolor='k', boxstyle='circle,pad=0.3', alpha=1.)
@@ -154,7 +154,7 @@ def plot_ros_diff_frequency(models, varnames, ssn, option, path_to_data,
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
-    varnames = ['ros', 'ivt', 'pcpt', 'snow', 'delsnowh']
+    varnames = ['ros', 'ivt', 'pcpt', 'delsnow', 'delsnowh']
     ssn_lst = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
     ssn_lst = ["NDJFMA"]
     option_lst = ['strict', 'flexible']

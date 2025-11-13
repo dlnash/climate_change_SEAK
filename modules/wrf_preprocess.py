@@ -239,7 +239,7 @@ def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', optio
 
     # --- ROS intensity (rain + snowmelt) ---
     ds['ros_intensity'] = ds['pcpt'].where(ds['ros'] == 1) + (ds['delsnowh'].where(ds['ros'] == 1)) 
-    ds['ros_intensity'].attrs.update({'units': 'mm day$^{-1}$', 'long_name': 'ROS intensity (prec + snowmelt)'})
+    ds['ros_intensity'].attrs.update({'units': 'mm d$^{-1}$', 'long_name': 'ROS intensity (prec + snowmelt)'})
 
     # --- subset to specified season ---
     mon_s, mon_e = get_startmon_and_endmon(season)
@@ -280,13 +280,13 @@ def compute_ros_frequency(ds):
         ('delsnowh', 25.4, 'Snowmelt'),
     ]
     ros = ds['ros'].groupby('time.year').sum('time').rename({'year': 'time'})
-    ros.attrs['units'] = "ROS (days yr$^{{-1}}$)"
+    ros.attrs['units'] = "ROS (d yr$^{{-1}}$)"
     freq_lst = [ros]
 
     for var, thres, label in vars_info:
         exceed = ds[var] > thres
         freq = exceed.groupby('time.year').sum('time').rename({'year': 'time'})
-        freq.attrs['units'] = f"days yr$^{{-1}}$ {label} > {thres}"
+        freq.attrs['units'] = f"d yr$^{{-1}}$ {label} > {thres}"
         freq_lst.append(freq)
 
     ds_out = xr.merge(freq_lst).mean('time', keep_attrs=True)

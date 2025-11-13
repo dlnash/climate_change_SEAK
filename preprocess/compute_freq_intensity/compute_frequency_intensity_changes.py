@@ -36,11 +36,11 @@ def save_netcdf(ds, model, varname, season, option, filename_suffix):
 def compute_ros_intensity(ds, option, season, model):
     ds_ros_yearly = preprocess_WRF_ros(ds, temporal_resolution='yearly', option=option, season=season).mean('time')
     units_dict = {
-                'ros': 'days yr$^{-1}$',
-                'pcpt': 'mm day$^{-1}$',
-                'snow': 'mm day$^{-1}$',
-                'delsnowh': 'mm day$^{-1}$',
-                'ros_intensity': 'mm day$^{-1}$',
+                'ros': 'd yr$^{-1}$',
+                'pcpt': 'mm d$^{-1}$',
+                'snow': 'mm d$^{-1}$',
+                'delsnowh': 'mm d$^{-1}$',
+                'ros_intensity': 'mm d$^{-1}$',
             }
 
     for var, units in units_dict.items():
@@ -88,9 +88,9 @@ def main(config_file: str, job_info: str):
     units_dict = {
                     'uv925': ('uv', 'm s$^{-1}$'),
                     'ivt': ('ivt', 'kg m$^{-1}$ s$^{-1}$'),
-                    'pcpt': ('pcpt', 'mm day$^{-1}$'),
+                    'pcpt': ('pcpt', 'mm d$^{-1}$'),
                     'freezing_level': ('freezing_level', 'm'),
-                    'snow': ('snow', 'mm day$^{-1}$'),
+                    'snow': ('snow', 'mm d$^{-1}$'),
                 }
     varname, units = units_dict.get(varname, (varname, ''))
     ds_95th[varname].attrs['units'] = units

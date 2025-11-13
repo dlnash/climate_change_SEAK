@@ -1,0 +1,60 @@
+job_1:
+  model: ccsm
+  season: ONDJFM
+  varname: ivt
+job_10:
+  model: gfdl
+  season: ONDJFM
+  varname: snow
+job_11:
+  model: cfsr
+  season: ONDJFM
+  varname: ivt
+job_12:
+  model: cfsr
+  season: ONDJFM
+  varname: pcpt
+job_13:
+  model: cfsr
+  season: ONDJFM
+  varname: freezing_level
+job_14:
+  model: cfsr
+  season: ONDJFM
+  varname: uv925
+job_15:
+  model: cfsr
+  season: ONDJFM
+  varname: snow
+job_2:
+  model: ccsm
+  season: ONDJFM
+  varname: pcpt
+job_3:
+  model: ccsm
+  season: ONDJFM
+  varname: freezing_level
+job_4:
+  model: ccsm
+  season: ONDJFM
+  varname: uv925
+job_5:
+  model: ccsm
+  season: ONDJFM
+  varname: snow
+job_6:
+  model: gfdl
+  season: ONDJFM
+  varname: ivt
+job_7:
+  model: gfdl
+  season: ONDJFM
+  varname: pcpt
+job_8:
+  model: gfdl
+  season: ONDJFM
+  varname: freezing_level
+job_9:
+  model: gfdl
+  season: ONDJFM
+  varname: uv925

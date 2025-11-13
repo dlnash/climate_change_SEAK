@@ -32,7 +32,7 @@ from wrf_preprocess import preprocess_WRF_ros
 # ---------------------------------------------------------------------
 # Update ROS choice
 # ---------------------------------------------------------------------
-option = 'flexible' # strict or flexible
+option = 'strict' # strict or flexible
 
 # ---------------------------------------------------------------------
 # Load Data
@@ -95,7 +95,7 @@ ax = draw_basemap(
 
 # --- Contour plot ---
 # Define contour levels for discrete ROS counts (0, 1, 2, 3)
-levels = np.arange(1, 28, 2)  # finer levels between 0–3
+levels = np.arange(1, 11, 1)  # finer levels between 0–3
 cmap = plt.get_cmap('Blues')
 
 cf = ax.contourf(
@@ -150,7 +150,7 @@ ax.legend(handles=[ar_handle, non_ar_handle, ros_handle],
 # Colorbar and Save Figure
 # ---------------------------------------------------------------------
 cb = fig.colorbar(cf, cax=cax, orientation='vertical')
-cb.set_label('Mean ROS Frequency (days yr$^{-1}$)', fontsize=11)
+cb.set_label('Mean ROS Frequency (d yr$^{-1}$)', fontsize=11)
 cb.ax.tick_params(labelsize=10)
 
 output_path = Path(f'../figs/cfsr_ros_landslide_{option}.png')

@@ -80,8 +80,8 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
 
     # --- define variable names for each suffix ---
     if fsuffix == "ros_frequency_clim":
-        varnames = ['ros', 'ivt', 'pcpt', 'snow', 'delsnowh']
-        varname_lbl = ['ROS', 'IVT', 'Precip', 'SWE', 'Snowmelt']
+        varnames = ['ros', 'ivt', 'pcpt', 'delsnow', 'delsnowh']
+        varname_lbl = ['ROS', 'IVT', 'Precip', 'ΔSWE', 'Snowmelt']
     elif fsuffix == "ros_intensity_clim":
         varnames = ["ros", "pcpt", "snow", "delsnowh", "ros_intensity"]
         varname_lbl = ['ROS', 'Precip', 'SWE', 'Snowmelt', 'Intensity']
@@ -155,7 +155,7 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
         ax0 = fig.add_subplot(gs[i, 0])
 
         # Make your hexbin first (or define the plot limits before calling)
-        ax0.set_xlim(0, 3300)
+        ax0.set_xlim(0, 1900)
         ax0.set_ylim(54.5, 60)
         
         # Compute vmin/vmax based on visible region
@@ -167,9 +167,10 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
                 x_flat,
                 y_flat,
                 C=cfield,
-                gridsize=35,        # adjust for resolution
+                gridsize=50,        # adjust for resolution
                 cmap=cmap_clim,
-                vmin=levs_clim.min(), vmax=levs_clim.max(),
+                norm=norm_clim,
+                # vmin=levs_clim.min(), vmax=levs_clim.max(),
                 reduce_C_function=np.mean,  # how to aggregate the data in each bin
                 mincnt=1
             )
@@ -216,7 +217,7 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
             diff = (ds_model[varname] - cfsr_ds[varname][varname]).values.flatten()[mask]
             
             # or define the plot limits first
-            ax.set_xlim(0, 3300)
+            ax.set_xlim(0, 1900)
             ax.set_ylim(54.5, 60)
             
             # Compute vmin/vmax based on visible region
@@ -228,10 +229,11 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
                     x_flat,
                     y_flat,
                     C=diff,
-                    gridsize=35,        # adjust for resolution
+                    gridsize=50,        # adjust for resolution
                     cmap=cmap_diff,
+                    norm=norm_diff,
                     reduce_C_function=np.mean,  # how to aggregate the data in each bin
-                    vmin=levs_diff.min(), vmax=levs_diff.max(),
+                    # vmin=levs_diff.min(), vmax=levs_diff.max(),
                     mincnt=1
                 )
             else:

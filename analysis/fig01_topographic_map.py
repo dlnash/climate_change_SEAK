@@ -3,6 +3,7 @@
 Filename:    fig1_topographic_map.py
 Author:      Deanna Nash, dnash@ucsd.edu
 Description: Plot a topographic map of Southeast Alaska with labeled terrain features and communities.
+TODO: Bold the text and add POW
 """
 
 # --- Standard Library Imports ---
@@ -31,15 +32,24 @@ from wrf_utils import filter_vars
 # ---------------------------------------------------------------------
 # Helper Functions
 # ---------------------------------------------------------------------
-def make_land_cmap(vmin=0, vmax=3000):
+def make_land_cmap(vmin=0, vmax=2500, step=250):
     """
-    Return a terrain-style colormap and normalization for land elevations only.
+    Return a segmented terrain-style colormap and normalization for land elevations.
+    Colors are discrete, with steps defined by 'step'.
     """
-    colors_land = plt.cm.terrain(np.linspace(0.25, 1, 256))
-    cmap = mcolors.LinearSegmentedColormap.from_list('terrain_land', colors_land)
-    norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-    return cmap, norm
+    # Define levels (edges of color bins)
+    cflevs = np.arange(vmin, vmax + step, step)
 
+    # Sample terrain colormap over a subset to focus on land colors
+    colors_land = plt.cm.terrain(np.linspace(0.25, 1, len(cflevs) - 1))
+
+    # Create a ListedColormap for discrete colors
+    cmap = mcolors.ListedColormap(colors_land, name='terrain_land')
+
+    # Create a BoundaryNorm to map data values into the discrete intervals
+    norm = mcolors.BoundaryNorm(boundaries=cflevs, ncolors=cmap.N, clip=True)
+
+    return cmap, norm
 
 # ---------------------------------------------------------------------
 # Load Data
@@ -62,7 +72,8 @@ polys = polys.to_crs(epsg=4326)
 
 feature_labels = {
     'Chichagof Island': (-135.833242, 57.7),
-    'Baranof Island': (-135.2, 56.971734)
+    'Baranof Island': (-135.2, 56.971734),
+    'Prince of Wales Island': (-132.684034, 55.3)
 }
 
 label_offsets = {
@@ -102,7 +113,7 @@ cax = fig.add_subplot(gs[0, 1])
 # ---------------------------------------------------------------------
 # Plot Data
 # ---------------------------------------------------------------------
-cmap, norm = make_land_cmap(vmin=0, vmax=2500)
+cmap, norm = make_land_cmap()
 
 # Draw base map
 ax = draw_basemap(
@@ -139,7 +150,7 @@ for idx, (i, poly) in enumerate(polys.iterrows()):
         xytext=(offsets["dx"], offsets["dy"]),  # shift in points
         textcoords="offset points",
         transform=datacrs,
-        fontweight="bold",
+        fontweight='extra bold',
         ha="center",
         va="center",
         color=ec_lst[idx],
@@ -148,7 +159,7 @@ for idx, (i, poly) in enumerate(polys.iterrows()):
     )
 
 # Plot geographic feature labels
-style = {'color': 'black', 'fontweight': 'normal'}
+style = {'color': 'black', 'fontweight': 'heavy'}
 for label, (x, y) in feature_labels.items():
     ax.annotate(
         textwrap.fill(label, 11),

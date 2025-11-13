@@ -55,32 +55,32 @@ def get_colormap_and_levels(clim_type, varname):
     # === ros_intensity_clim ===
     elif clim_type == "ros_intensity_clim":
         if varname == 'ros':
-            levs_clim = np.arange(0, 11, 1); cmap_clim = cmo.rain
+            levs_clim = np.arange(0, 6, 1); cmap_clim = cmo.rain
             levs_diff = np.arange(-3, 3.5, 0.5)
             cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-0.5, 0.5))
         elif varname == 'pcpt':
-            levs_clim = np.arange(20, 53, 3); cmap_clim = cmo.rain
-            levs_diff = np.arange(-15, 18, 3)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-3, 3))
+            levs_clim = np.arange(25, 80, 5); cmap_clim = cmo.rain
+            levs_diff = np.arange(-25, 30, 5)
+            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-5, 5))
         elif varname == 'snow':
-            levs_clim = np.arange(100, 1980, 180); cmap_clim = cmo.rain
-            levs_diff = np.arange(-400, 480, 80)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-80, 80))
+            levs_clim = np.arange(0, 1100, 100); cmap_clim = cmo.rain
+            levs_diff = np.arange(-1250, 1500, 250)
+            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-10, 10))
         elif varname == 'delsnowh':
-            levs_clim = np.arange(10, 98, 8); cmap_clim = cmo.rain
-            levs_diff = np.arange(-40, 48, 8)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-8, 8))
-        else:
-            levs_clim = np.arange(40, 128, 8); cmap_clim = cmo.rain
-            levs_diff = np.arange(-40, 48, 8)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-8, 8))
+            levs_clim = np.arange(0, 165, 15); cmap_clim = cmo.rain
+            levs_diff = np.arange(-50, 60, 10)
+            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-10, 10))
+        elif varname == 'ros_intensity':
+            levs_clim = np.arange(60, 220, 16); cmap_clim = cmo.rain
+            levs_diff = np.arange(-65, 65, 13)
+            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-13, 13))
 
         norm_clim = BoundaryNorm(levs_clim, ncolors=cmap_clim.N, clip=True)
 
     # === ros_frequency_clim ===
     elif clim_type == "ros_frequency_clim":
         if varname == 'ros':
-            levs_clim = np.arange(0, 11, 1); cmap_clim = cmo.rain
+            levs_clim = np.arange(0, 6, 1); cmap_clim = cmo.rain
             levs_diff = np.arange(-3, 3.5, 0.5)
             cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-0.5, 0.5))
         elif varname == 'ivt':
@@ -91,17 +91,14 @@ def get_colormap_and_levels(clim_type, varname):
             levs_clim, cmap_clim = np.arange(0, 44, 4), cmo.rain
             levs_diff = np.arange(-10, 12, 2)
             cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-2, 2))
-        elif varname == 'snow':
-            levs_clim, cmap_clim = np.arange(0, 330, 30), cmo.rain
-            levs_diff = np.arange(-50, 60, 10)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-10, 10))
+        elif varname == 'delsnow':
+            levs_clim, cmap_clim = np.arange(0, 33, 3), cmo.rain
+            levs_diff = np.arange(-15, 18, 3)
+            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-3, 3))
         elif varname == 'delsnowh':
-            levs_clim, cmap_clim = np.arange(0, 220, 20), cmo.rain
+            levs_clim, cmap_clim = np.arange(0, 165, 15), cmo.rain
             levs_diff = np.arange(-30, 36, 6)
             cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-6, 6))
-        else:
-            levs_clim = np.linspace(0, 1, 10); cmap_clim = cmo.tempo
-            levs_diff = np.linspace(-1, 1, 10); cmap_diff = cmo.balance
 
         norm_clim = BoundaryNorm(levs_clim, ncolors=cmap_clim.N, clip=True)
 

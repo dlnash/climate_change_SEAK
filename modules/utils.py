@@ -23,6 +23,8 @@ def get_startmon_and_endmon(ssn):
         start_mon, end_mon = (11, 4)
     elif ssn == 'MJJASO':
         start_mon, end_mon = (5, 10)
+    elif ssn == 'ONDJFM':
+        start_mon, end_mon = (10, 3)
 
     return start_mon, end_mon
 

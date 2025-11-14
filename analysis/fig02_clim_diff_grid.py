@@ -158,8 +158,7 @@ if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
     varnames = ["ivt", "uv", "freezing_level", "pcpt", "snow"]
-    ssn_lst = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
-    ssn_lst = ["NDJFMA"]
+    ssn_lst = ["ONDJFM"]
     for ssn in ssn_lst:
         print(f"Creating plot for {ssn}")
         plot_clim_diff_grid(models, varnames, ssn, path_to_data)

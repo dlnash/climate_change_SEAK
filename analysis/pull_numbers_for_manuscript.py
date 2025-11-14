@@ -175,7 +175,7 @@ def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
-    ssn_lst = ["NDJFMA"]
+    ssn_lst = ["ONDJFM"]
     options = ["strict", "flexible"]
 
     for option in options:

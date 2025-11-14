@@ -275,13 +275,13 @@ def plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
-    ssn_lst = ["NDJFMA"]
-    options = ["strict", "flexible"]
+    ssn_lst = ["ONDJFM"]
+    options = ["strict"]
     fsuffix_lst = ["95th_percentile_clim", "ros_intensity_clim", "ros_frequency_clim"]
     
     for option in options:
         for ssn in ssn_lst:
             for fsuffix in fsuffix_lst:
-                for plot_type in ["hexbin", "scatter"]:
+                for plot_type in ["hexbin"]:
                     print(f"Creating plot for {option}, {ssn}, {fsuffix}, {plot_type}")
                     plot_clim_diff_scatter(models, ssn, option, path_to_data, fsuffix, plot_type)

@@ -155,8 +155,7 @@ if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
     models = ["cfsr", "ccsm", "gfdl"]
     varnames = ['ros', 'ivt', 'pcpt', 'delsnow', 'delsnowh']
-    ssn_lst = ["DJF", "MAM", "JJA", "SON", "NDJFMA"]
-    ssn_lst = ["NDJFMA"]
+    ssn_lst = ["ONDJFM"]
     option_lst = ['strict', 'flexible']
     for option in option_lst:
         for ssn in ssn_lst:

@@ -21,6 +21,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.lines as mlines
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cmocean.cm as cmo
 
 # --- Personal Modules ---
 sys.path.append('../modules')
@@ -96,7 +97,7 @@ ax = draw_basemap(
 # --- Contour plot ---
 # Define contour levels for discrete ROS counts (0, 1, 2, 3)
 levels = np.arange(1, 11, 1)  # finer levels between 0–3
-cmap = plt.get_cmap('Blues')
+cmap = cmo.dense
 
 cf = ax.contourf(
     ros_sum['lon'], ros_sum['lat'], ros_sum.values/38.,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Filename:    figXX_total_ROS_landslide_map.py
+Filename:    fig03_total_ROS_landslide_map.py
 Author:      Deanna Nash, dnash@ucsd.edu
 Description: Plot a topographic map of Southeast Alaska with labeled terrain features and communities.
 """
@@ -51,7 +51,11 @@ print(ros_sum.values.max())
 # --- read summary of landslide information --- 
 df = pd.read_csv(f'../out/landslide_summary_{option}.csv')
 # Sort so that points with ar=1 and ros=1 are plotted last
-df = df.sort_values(by=['max_ros'], ascending=[True])
+# df = df.sort_values(by=['max_ros'], ascending=[False])
+
+df2 = df.loc[df['max_ros']==1.]
+
+df_lst = [df, df2]
 # ---------------------------------------------------------------------
 # Map and Label Definitions
 # ---------------------------------------------------------------------
@@ -106,30 +110,30 @@ cf = ax.contourf(
     extend='max',
     transform=ccrs.PlateCarree()
 )
-
-# Plot landslide markers
-for i, row in df.iterrows():
-    x = row['lon']
-    y = row['lat']
-    # Determine fill color
-    marker_color = 'yellow' if row['max_ar'] == 1 else 'gray'
-    
-    # Determine outline color and width
-    marker_outline = 'red' if row['max_ros'] == 1 else 'black'
-    marker_edgewidth = .5 if row['max_ros'] == 1 else 0.3
-    
-    # Plot marker with both fill and edge colors
-    ax.plot(
-        x, y,
-        marker='o',
-        markersize=6,
-        markerfacecolor=marker_color,
-        markeredgecolor=marker_outline,
-        markeredgewidth=marker_edgewidth,
-        transform=datacrs,
-        alpha=0.9,
-        zorder=201
-    )
+for df in df_lst:
+    # Plot landslide markers
+    for i, row in df.iterrows():
+        x = row['lon']
+        y = row['lat']
+        # Determine fill color
+        marker_color = 'yellow' if row['max_ar'] == 1 else 'gray'
+        
+        # Determine outline color and width
+        marker_outline = 'red' if row['max_ros'] == 1 else 'black'
+        marker_edgewidth = .5 if row['max_ros'] == 1 else 0.3
+        
+        # Plot marker with both fill and edge colors
+        ax.plot(
+            x, y,
+            marker='o',
+            markersize=6,
+            markerfacecolor=marker_color,
+            markeredgecolor=marker_outline,
+            markeredgewidth=marker_edgewidth,
+            transform=datacrs,
+            alpha=0.9,
+            zorder=201
+        )
 
 # --- Create legend handles ---
 ar_handle = mlines.Line2D([], [], color='yellow', marker='o', linestyle='None',

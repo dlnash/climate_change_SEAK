@@ -150,16 +150,16 @@ for idx, (i, poly) in enumerate(polys.iterrows()):
         xytext=(offsets["dx"], offsets["dy"]),  # shift in points
         textcoords="offset points",
         transform=datacrs,
-        fontweight='extra bold',
+        fontweight='bold',
         ha="center",
         va="center",
         color=ec_lst[idx],
-        path_effects=[pe.withStroke(linewidth=1, foreground="white")],
+        path_effects=[pe.withStroke(linewidth=2, foreground="white")],
         zorder=215
     )
 
 # Plot geographic feature labels
-style = {'color': 'black', 'fontweight': 'heavy'}
+style = {'color': 'black', 'fontweight': 'bold'}
 for label, (x, y) in feature_labels.items():
     ax.annotate(
         textwrap.fill(label, 11),
@@ -169,7 +169,7 @@ for label, (x, y) in feature_labels.items():
         ha='center',
         fontsize=8,
         xycoords=datacrs._as_mpl_transform(ax),
-        path_effects=[pe.withStroke(linewidth=1.25, foreground="white")],
+        path_effects=[pe.withStroke(linewidth=1.5, foreground="white")],
         zorder=200,
         **style
     )

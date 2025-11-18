@@ -42,11 +42,15 @@ option = 'strict' # strict or flexible
 ds = load_preprocessed_WRF_data('cfsr', 'snow', anomaly=False)
 
 # --- compute ROS information ---
-ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option)
+ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option, season='ONDJFM')
 
 # --- Sum over time: number of ROS days per grid cell ---
-ros_sum = ds['ros'].sum(dim='time')
+ros = ds['ros'].groupby('time.year').sum('time').rename({'year': 'time'})
+ros.attrs['units'] = "ROS (d yr$^{{-1}}$)"
+ros_sum = ros.mean('time', keep_attrs=True)
 print(ros_sum.values.max())
+print(ros_sum.quantile(q=0.98).values)
+# print(ros_sum.mean(skipna=True).values)
 
 # --- read summary of landslide information --- 
 df = pd.read_csv(f'../out/landslide_summary_{option}.csv')
@@ -104,7 +108,7 @@ levels = np.arange(1, 11, 1)  # finer levels between 0–3
 cmap = cmo.dense
 
 cf = ax.contourf(
-    ros_sum['lon'], ros_sum['lat'], ros_sum.values/38.,
+    ros_sum['lon'], ros_sum['lat'], ros_sum.values,
     levels=levels,
     cmap=cmap,
     extend='max',

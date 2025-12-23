@@ -134,7 +134,7 @@ cf = ax.pcolormesh(
 
 # Plot Climate Divisions
 polys.crs = 'epsg:4326'
-ec_lst = ['tab:red', 'tab:blue', 'tab:orange', 'tab:purple']
+ec_lst = ['#000000', '#DDAA33', '#AA3377', '#004488']
 for idx, (i, poly) in enumerate(polys.iterrows()):
     feature = ShapelyFeature([poly.geometry], ccrs.PlateCarree(),
                              edgecolor=ec_lst[idx], facecolor='none', linewidth=1.)

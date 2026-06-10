@@ -91,28 +91,6 @@ def filter_vars(
 
     return ds
 
-def load_preprocessed_WRF_data(model, varname, anomaly=False):
-    
-    if anomaly == False:
-        ## read the non-anomaly data
-        datadir = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/{varname}/")
-        fname_pattern = f'WRFDS_{varname}_*.nc'
-    else:
-        ## read the anomaly data
-        datadir = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/{varname}/anomalies/")
-        fname_pattern = f'daily_filtered_anomalies_{varname}_*.nc'
-    
-    ds = xr.open_mfdataset(datadir+fname_pattern,
-                          engine='netcdf4',
-                           combine='by_coords')
-    
-    ## rename time variable
-    ds = ds.rename({'Time': 'time'})
-    
-    ## rename dims from south_north to lat and west_east to lon
-    ds = ds.rename_dims({'south_north': 'y', 'west_east': 'x'})
-    
-    return ds
 
 def find_nearest_indices(ds, lat, lon):
     # Function to find nearest grid indices on 2D curvilinear grid

@@ -1,19 +1,21 @@
 #!/bin/bash
 #SBATCH --account=cwp140
 #SBATCH --partition=shared-128
-#SBATCH -N 1 # Ensure that all cores are on one machine
-#SBATCH --nodes=1 # specifies how many nodes to use (each node has 24 cores)
+#SBATCH --nodes=1
 #SBATCH --mem=32GB
-#SBATCH -t 5:00:00 # Runtime in HH:MM:SS
-#SBATCH -o slurm_out/output_%a # File to which STDOUT will be written
-#SBATCH -e slurm_out/output_err%a # File to which STDERR will be written
-#SBATCH --job-name=compute_trends
-#SBATCH --mail-type=ALL # Type of email notification- BEGIN,END,FAIL,ALL
+#SBATCH --time=04:00:00
+#SBATCH --job-name=compute_freq_intensity
+#SBATCH --output=logs/out_%A_%a.txt
+#SBATCH --error=logs/err_%A_%a.txt
 #SBATCH --mail-user=dnash@ucsd.edu # Email to which notifications will be sent
-#SBATCH --array=1-15%15 # runs jobs x-y, 100 at a time
+#SBATCH --array=0-24%10
 
-# Activate Anaconda work environment
-source /home/dnash/miniconda3/envs/SEAK-impacts/etc/conda/activate.d/*
- 
-linevar=`sed $SLURM_ARRAY_TASK_ID'q;d' calls_all.txt`
-eval $linevar
+OFFSET=$1
+
+/home/dnash/miniconda3/envs/SEAK-impacts/bin/python compute_frequency_intensity_changes.py \
+    --task-id ${SLURM_ARRAY_TASK_ID} \
+    --offset ${OFFSET} \
+
+# python compute_frequency_intensity_changes.py --task-id 0 ## run this to test one job
+# python compute_frequency_intensity_changes.py --task-id 0 --print-jobs ## run this to print list of jobs
+sbatch run_compute_freq_intensity_changes.slurm 0 # to run all jobs

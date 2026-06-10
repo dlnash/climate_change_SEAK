@@ -20,53 +20,10 @@ sys.path.append('../../modules')
 import globalvars
 import wrf_preprocess as wrf_prep
 
-# -------------------------------
-# CONFIG
-# -------------------------------
-MODEL_CONFIGS = {
-    "cfsr": {
-        "scenarios": ["historical"],
-        "years": list(range(1981, 2020)),
-    },
-    "ccsm": {
-        "scenarios": ["hist", "rcp85"],
-        "years": {
-            "hist": list(range(1981, 2011)),
-            "rcp85": list(range(2031, 2061)),
-        },
-    },
-    "gfdl": {
-        "scenarios": ["hist", "rcp85"],
-        "years": {
-            "hist": list(range(1981, 2011)),
-            "rcp85": list(range(2031, 2061)),
-        },
-    },
-}
+# Path to custom modules
+sys.path.append('../')
+from build_jobs import build_job_list
 
-# -------------------------------
-# BUILD JOB LIST
-# -------------------------------
-def build_job_list():
-    jobs = []
-
-    for model, cfg in MODEL_CONFIGS.items():
-        for scenario in cfg["scenarios"]:
-
-            if model == "cfsr":
-                years = cfg["years"]
-            else:
-                years = cfg["years"][scenario]
-
-            for year in years:
-                jobs.append({
-                    "model": model,
-                    "scenario": scenario,
-                    "year": year,
-                })
-
-    return jobs
-    
 # -------------------------------
 # MAIN
 # -------------------------------

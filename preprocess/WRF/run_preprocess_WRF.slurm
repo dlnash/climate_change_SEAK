@@ -15,5 +15,5 @@ OFFSET=$1
     --task-id ${SLURM_ARRAY_TASK_ID} \
     --offset ${OFFSET} \
 
-# sbatch run_preprocess_WRF.slurm 0
-# sbatch run_preprocess_WRF.slurm 1000
+# sbatch run_preprocess_wrf.slurm 0
+# sbatch run_preprocess_wrf.slurm 1000

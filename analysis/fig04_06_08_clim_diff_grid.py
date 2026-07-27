@@ -313,8 +313,8 @@ def plot_change_grid(
         ]
 
         titles = [
-            "CCSM Future − Historical",
-            "GFDL Future − Historical",
+            "ΔCCSM (Future − Historical)",
+            "ΔGFDL (Future − Historical)",
             "Multi-model Mean Δ"
         ]
 
@@ -406,10 +406,14 @@ def plot_change_grid(
             else hist["ccsm"][varname]
             .attrs.get("units", "")
         )
-
-        cb.set_label(
-            f"Δ {var_labels[i]} ({units})"
-        )
+        if plot_type == "ros_frequency_clim":
+            cb.set_label(
+                f"Δ {units}"
+            )
+        else:
+            cb.set_label(
+                f"Δ{var_labels[i]} ({units})"
+            )
 
     # ============================================================
     # Save Figure

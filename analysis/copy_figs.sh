@@ -16,14 +16,14 @@ overleafdir="/cw3e/mead/projects/cwp140/repos/SEAK_climate_change_manuscript"  #
 # --- Figure name lists ---
 fig_names=(
     "topographic_map"
-    "clim/ONDJFM_95th_percentile_clim"
-    "clim/ONDJFM_95th_percentile_clim_hexbin"
     "cfsr_ros_landslide_strict"
     "ros_case"
-    "ros_strict/ONDJFM/ONDJFM_ROS_FREQ_DIFF"
-    "ros_strict/ONDJFM/ONDJFM_ros_frequency_clim_hexbin"
-    "ros_strict/ONDJFM/ONDJFM_ROS_INTENSITY_DIFF"
-    "ros_strict/ONDJFM/ONDJFM_ros_intensity_clim_hexbin"
+    "clim/ONDJFM_95th_percentile_clim_change_map"
+    "clim/ONDJFM_95th_percentile_clim_change_hexbin"
+    "ros_strict/ONDJFM/ONDJFM_ROS_FREQ_CHANGE_map"
+    "ros_strict/ONDJFM/ONDJFM_ROS_FREQ_CHANGE_hexbin"
+    "ros_strict/ONDJFM/ONDJFM_ROS_INTENSITY_CHANGE_map"
+    "ros_strict/ONDJFM/ONDJFM_ROS_INTENSITY_CHANGE_hexbin"
 )
 
 fig_nums=(1 2 3 4 5 6 7 8 9)

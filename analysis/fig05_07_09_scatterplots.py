@@ -30,48 +30,33 @@ from matplotlib.colorbar import Colorbar
 sys.path.append('../modules/')
 import globalvars
 from plotter import set_font
-from wrf_utils import filter_vars
+from wrf_utils import load_preprocessed_wrf_metrics, read_wrf_terrain
 from colormaps import get_colormap_and_levels
-
+from plot_configs import PLOT_CONFIGS, MODELS, SCENARIOS
 
 # ---------------------------------------------------------------------
 # Process
 # ---------------------------------------------------------------------
-def plot_clim_diff_scatter(ssn, option, path_to_data,
-                           fsuffix, plot_type):
+def plot_clim_diff_scatter(
+                           path_to_data,
+                           plot_type,
+                           ssn, 
+                           option=None, 
+                           ):
 
-    # -------------------------------------------------------------
-    # Variable configuration
-    # -------------------------------------------------------------
-    if fsuffix == "ros_frequency_clim":
-        varnames = ['ros', 'ivt', 'pcpt', 'delsnow', 'delsnowh']
-        varname_lbl = ['ROS', 'IVT', 'Precip', 'ΔSWE', 'Snowmelt']
+    """
+    Create a 5-row x 3-column plot:
 
-    elif fsuffix == "ros_intensity_clim":
-        varnames = ["ros", "pcpt", "snow",
-                    "delsnowh", "ros_intensity"]
-        varname_lbl = ['ROS', 'Precip',
-                       'SWE', 'Snowmelt', 'Intensity']
+    Columns:
+        1 = Multi-model mean (historical)
+        2 = Multi model mean (future - historical)
+        3 = CCSM - GFDL (future)
+    """
 
-    elif fsuffix == "95th_percentile_clim":
-        varnames = [
-            "ivt",
-            "uv",
-            "freezing_level",
-            "pcpt",
-            "snow"
-        ]
+    cfg = PLOT_CONFIGS[plot_type]
 
-        varname_lbl = [
-            'IVT',
-            r'$\overline{\mathrm{UV}}$',
-            'Freezing Level',
-            'Precipitation',
-            'SWE'
-        ]
-
-    else:
-        raise ValueError(f"Unknown fsuffix: {fsuffix}")
+    varnames = cfg["varnames"]
+    var_labels = cfg["labels"]
 
     # -------------------------------------------------------------
     # Figure setup
@@ -85,35 +70,16 @@ def plot_clim_diff_scatter(ssn, option, path_to_data,
     set_font(current_dpi, scaling_factor)
 
     nrows = len(varnames)
+    ncols = 3
 
     gs = GridSpec(
-        nrows, 4,
-        width_ratios=[1, 1, 1, 0.05],
-        hspace=0.15,
-        wspace=0.08
+        nrows, 
+        ncols+3, 
+        height_ratios=[1]*nrows, 
+        width_ratios=[1, 0.05, 0.25, 1, 1, 0.05], 
+        hspace=0.05, 
+        wspace=0.05
     )
-
-    # -------------------------------------------------------------
-    # Read terrain
-    # -------------------------------------------------------------
-    elev_fname = os.path.join(
-        path_to_data,
-        "downloads/SEAK-WRF/geo_southeast.nc"
-    )
-
-    elev_ds = xr.open_dataset(elev_fname)
-    elev_ds = filter_vars(
-        elev_ds.squeeze(),
-        elev_fname,
-        "hgt"
-    )
-
-    terrain = elev_ds["hgt"].values
-    landmask = elev_ds["landmask"].values
-    land_mask_bool = landmask == 1
-
-    mask = land_mask_bool.flatten()
-    x_flat = terrain.flatten()[mask]
 
     # -------------------------------------------------------------
     # Labels
@@ -128,107 +94,78 @@ def plot_clim_diff_scatter(ssn, option, path_to_data,
         alpha=1.
     )
 
-    column_titles = [
-        "ΔCCSM (Future − Historical)",
-        "ΔGFDL (Future − Historical)",
-        "Multi-model Mean Δ"
-    ]
+    mask, x_flat = read_wrf_terrain()
 
     # =============================================================
     # Main Loop
     # =============================================================
     for i, varname in enumerate(varnames):
 
-        print(f"Plotting {varname}...")
-
-        # ---------------------------------------------------------
-        # Load datasets
-        # ---------------------------------------------------------
-        def load_model(model, scenario):
-
-            if fsuffix == "95th_percentile_clim":
-                fname = os.path.join(
-                    path_to_data,
-                    f"preprocessed/SEAK-WRF/"
-                    f"{model}/{scenario}/trends/"
-                    f"{varname}_{model}_{ssn}_{fsuffix}.nc"
-                )
-
-            else:
-                fname = os.path.join(
-                    path_to_data,
-                    f"preprocessed/SEAK-WRF/"
-                    f"{model}/{scenario}/trends/"
-                    f"snow_{model}_{ssn}_{option}_{fsuffix}.nc"
-                )
-
-            return xr.open_dataset(fname)
-
-        ccsm_hist = load_model("ccsm", "hist")
-        ccsm_future = load_model("ccsm", "rcp85")
-
-        gfdl_hist = load_model("gfdl", "hist")
-        gfdl_future = load_model("gfdl", "rcp85")
-
-        # ---------------------------------------------------------
-        # Compute differences
-        # ---------------------------------------------------------
-        diff_ccsm = (
-            ccsm_future[varname]
-            - ccsm_hist[varname]
+        fields, titles, units = load_preprocessed_wrf_metrics(
+            varname, 
+            plot_type, 
+            season, 
+            option
         )
 
-        diff_gfdl = (
-            gfdl_future[varname]
-            - gfdl_hist[varname]
-        )
-
-        diff_mean = xr.concat(
-            [diff_ccsm, diff_gfdl],
-            dim="model"
-        ).mean("model")
-
-        diffs = [
-            diff_ccsm,
-            diff_gfdl,
-            diff_mean
-        ]
-
-        lat2d = diff_ccsm.lat.values
+        lat2d = fields[0].lat.values
         y_flat = lat2d.flatten()[mask]
 
         # ---------------------------------------------------------
         # Colormap
         # ---------------------------------------------------------
         (
-            _,
-            _,
-            _,
+            levs_clim,
+            cmap_clim,
+            norm_clim,
             levs_diff,
             cmap_diff,
-            norm_diff
+            norm_diff,
         ) = get_colormap_and_levels(
-            fsuffix,
+            cfg["cmap_key"],
             varname
         )
+        print(f"Plotting {varname}")
 
         diff_handles = []
 
         # ---------------------------------------------------------
-        # Columns
+        # Plot columns
         # ---------------------------------------------------------
-        for j, diff in enumerate(diffs):
+        grid_cols = [0, 3, 4]
 
-            ax = fig.add_subplot(gs[i, j])
+        for k, gcol in enumerate(grid_cols):
+        
+            ax = fig.add_subplot(
+                gs[i, gcol],
+            )
 
             ax.set_xlim(0, 1900)
             ax.set_ylim(54.5, 60)
 
-            cfield = diff.values.flatten()[mask]
+            cfield = fields[k].values.flatten()[mask]
 
-            if plot_type == "hexbin":
+            # -----------------------------
+            # Historical climatology
+            # -----------------------------
+            if k == 0:
+                cf = ax.hexbin(
+                    x_flat,
+                    y_flat,
+                    C=cfield,
+                    gridsize=50,
+                    cmap=cmap_clim,
+                    norm=norm_clim,
+                    reduce_C_function=np.mean,
+                    mincnt=1
+                )
+                
+            # -----------------------------
+            # Difference panels
+            # -----------------------------
+            else:
 
-                sc = ax.hexbin(
+                cf = ax.hexbin(
                     x_flat,
                     y_flat,
                     C=cfield,
@@ -239,82 +176,86 @@ def plot_clim_diff_scatter(ssn, option, path_to_data,
                     mincnt=1
                 )
 
-            else:
-
-                sc = ax.scatter(
-                    x_flat,
-                    y_flat,
-                    c=cfield,
-                    cmap=cmap_diff,
-                    vmin=levs_diff.min(),
-                    vmax=levs_diff.max(),
-                    s=0.5
-                )
-
-            diff_handles.append(sc)
-
             if i == 0:
-                ax.set_title(column_titles[j])
+                ax.set_title(titles[k])
+
+            ax.text(
+                0.05,
+                0.96,
+                labels[label_idx],
+                transform=ax.transAxes,
+                va="top",
+                ha="left",
+                bbox=bbox_dict,
+            )
+        
+            label_idx += 1
 
             if i == nrows - 1:
                 ax.set_xlabel("Elevation (m)")
 
-            if j == 0:
+            if k == 0:
                 ax.set_ylabel("Latitude (°N)")
             else:
                 ax.set_yticklabels([])
 
-            ax.text(
-                0.05,
-                0.95,
-                labels[label_idx],
-                transform=ax.transAxes,
-                va='top',
-                ha='left',
-                bbox=bbox_dict
-            )
+            # --------------------------------------------------------
+            # Colorbar
+            # --------------------------------------------------------
+            
+            if k == 0:
+    
+                cbax = fig.add_subplot(gs[i, 1])
+            
+                cb = Colorbar(
+                    ax=cbax,
+                    mappable=cf,
+                    orientation="vertical",
+                )
+            
+                if plot_type == "ros_frequency_clim":
+                    if varname == "ros":
+                        cb.set_label("ROS (days yr$^{-1}$)")
+                    else:
+                        cb.set_label(units)
+                else:
+                    cb.set_label(
+                        f"{var_labels[i]} ({units})"
+                    )
+    
+            elif k == 2:
+    
+                cbax = fig.add_subplot(gs[i, -1])
+            
+                cb = Colorbar(
+                    ax=cbax,
+                    mappable=cf,
+                    orientation="vertical",
+                )
+            
+                if plot_type == "ros_frequency_clim":
+                    if varname == "ros":
+                        cb.set_label(r"$\Delta$ ROS (days yr$^{-1}$)")
+                    else:
+                        cb.set_label(rf"$\Delta$ {units}")
+                else:
+                    cb.set_label(
+                        rf"$\Delta$ {var_labels[i]} ({units})"
+                    )
 
-            label_idx += 1
-
-        # ---------------------------------------------------------
-        # Shared colorbar
-        # ---------------------------------------------------------
-        cbax = fig.add_subplot(gs[i, -1])
-
-        cb = Colorbar(
-            ax=cbax,
-            mappable=diff_handles[0],
-            orientation="vertical",
-            extend='both'
-        )
-
-        units = ccsm_hist[varname].attrs.get(
-            "units",
-            ""
-        )
-
-        if fsuffix == "ros_frequency_clim":
-            cb.set_label(
-                f"Δ {units}"
-            )
-        else:
-            cb.set_label(
-                f"Δ{varname_lbl[i]} ({units})"
-            )
-
-    # =============================================================
+    # ============================================================
     # Save Figure
-    # =============================================================
-    if fsuffix == "95th_percentile_clim":
-        outname = (
-            f"../figs/clim/"
-            f"{ssn}_{fsuffix}_{plot_type}.png"
-        )
-    else:
-        outname = (
-            f"../figs/ros_{option}/{ssn}/"
-            f"{ssn}_{fsuffix}_{plot_type}.png"
-        )
+    # ============================================================
+    outname = cfg["outfile"].format(
+        season=season,
+        option=option,
+        plot_name="hexbin",
+    )
+
+    os.makedirs(
+        os.path.dirname(outname),
+        exist_ok=True
+    )
 
     fig.savefig(
         outname,
@@ -331,36 +272,47 @@ def plot_clim_diff_scatter(ssn, option, path_to_data,
 # Driver
 # =============================================================
 if __name__ == "__main__":
-
     path_to_data = globalvars.path_to_data
+    seasons = ["ONDJFM"]
+    options = ["strict"]
 
-    ssn_lst = ["ONDJFM"]
+    # --- 95th percentile climatology ---
+    for season in seasons:
 
-    options = ["strict", "flexible"]
+        print(
+            f"Creating 95th percentile plot: {season}"
+        )
 
-    fsuffix_lst = [
-        "95th_percentile_clim",
-        "ros_intensity_clim",
-        "ros_frequency_clim"
-    ]
+        plot_clim_diff_scatter(
+            path_to_data,
+            "95th_percentile_clim",
+            season
+        )
 
+    # --- ROS plots ---
     for option in options:
-        for ssn in ssn_lst:
-            for fsuffix in fsuffix_lst:
-                for plot_type in ["hexbin"]:
+        for season in seasons:
 
-                    print(
-                        f"Creating plot for "
-                        f"{option}, "
-                        f"{ssn}, "
-                        f"{fsuffix}, "
-                        f"{plot_type}"
-                    )
+            print(
+                f"Creating ROS frequency plot: "
+                f"{option} {season}"
+            )
 
-                    plot_clim_diff_scatter(
-                        ssn,
-                        option,
-                        path_to_data,
-                        fsuffix,
-                        plot_type
-                    )
+            plot_clim_diff_scatter(
+                path_to_data,
+                "ros_frequency_clim",
+                season,
+                option,
+            )
+
+            print(
+                f"Creating ROS intensity plot: "
+                f"{option} {season}"
+            )
+
+            plot_clim_diff_scatter(
+                path_to_data,
+                "ros_intensity_clim",
+                season,
+                option,
+            )

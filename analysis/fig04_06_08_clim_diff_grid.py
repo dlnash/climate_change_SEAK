@@ -32,168 +32,17 @@ import sys
 sys.path.append('../modules/')
 
 import globalvars
+from wrf_utils import load_preprocessed_wrf_metrics
 from plotter import set_font
 from colormaps import get_colormap_and_levels
-
-
-# ============================================================
-# CONFIG
-# ============================================================
-PLOT_CONFIGS = {
-
-    "95th_percentile_clim": {
-        "varnames": [
-            "ivt",
-            "uv",
-            "freezing_level",
-            "pcpt",
-            "snow"
-        ],
-
-        "labels": [
-            "IVT",
-            r"$\overline{\mathrm{UV}}$",
-            "Freezing Level",
-            "Precipitation",
-            "SWE"
-        ],
-
-        "filename_template":
-            "{var}_{model}_{season}_95th_percentile_clim.nc",
-
-        "subdir":
-            "{model}/{scenario}/trends",
-
-        "outfile":
-            "../figs/clim/{season}_95th_percentile_clim_change.png",
-
-        "cmap_key":
-            "95th_percentile_clim",
-
-        "extend":
-            "both",
-    },
-
-    "ros_frequency_clim": {
-        "varnames": [
-            "ros",
-            "ivt",
-            "pcpt",
-            "delsnow",
-            "delsnowh"
-        ],
-
-        "labels": [
-            "ROS",
-            "IVT",
-            "Precip",
-            r"$\Delta$ SWE",
-            "Snowmelt"
-        ],
-
-        "filename_template":
-            "snow_{model}_{season}_{option}_ros_frequency_clim.nc",
-
-        "subdir":
-            "{model}/{scenario}/trends",
-
-        "outfile":
-            "../figs/ros_{option}/{season}/{season}_ROS_FREQ_CHANGE.png",
-
-        "cmap_key":
-            "ros_frequency_clim",
-
-        "extend":
-            "max",
-    },
-
-    "ros_intensity_clim": {
-        "varnames": [
-            "ros",
-            "pcpt",
-            "snow",
-            "delsnowh",
-            "ros_intensity"
-        ],
-
-        "labels": [
-            "ROS",
-            "Precip",
-            "SWE",
-            "Snowmelt",
-            "Intensity"
-        ],
-
-        "filename_template":
-            "snow_{model}_{season}_{option}_ros_intensity_clim.nc",
-
-        "subdir":
-            "{model}/{scenario}/trends",
-
-        "outfile":
-            "../figs/ros_{option}/{season}/{season}_ROS_INTENSITY_CHANGE.png",
-
-        "cmap_key":
-            "ros_intensity_clim",
-
-        "extend":
-            "both",
-    },
-}
-
-
-MODELS = ["ccsm", "gfdl"]
-SCENARIOS = {
-    "historical": "hist",
-    "future": "rcp85"
-}
-
-
-# ============================================================
-# Helper Functions
-# ============================================================
-def load_dataset(
-    path_to_data,
-    model,
-    scenario,
-    plot_type,
-    varname,
-    season,
-    option=None
-):
-    """Load dataset for a given plot type."""
-
-    cfg = PLOT_CONFIGS[plot_type]
-
-    datadir = os.path.join(
-        path_to_data,
-        "preprocessed",
-        "SEAK-WRF",
-        cfg["subdir"].format(
-            model=model,
-            scenario=scenario
-        )
-    )
-
-    fname = cfg["filename_template"].format(
-        var=varname,
-        model=model,
-        season=season,
-        option=option
-    )
-
-    path = os.path.join(datadir, fname)
-
-    if not os.path.exists(path):
-        raise FileNotFoundError(path)
-
-    return xr.open_dataset(path)
+from plot_configs import PLOT_CONFIGS, MODELS, SCENARIOS
 
 
 # ============================================================
 # Plot Function
 # ============================================================
 def plot_change_grid(
+    path_to_data,
     plot_type,
     season,
     option=None,
@@ -206,9 +55,9 @@ def plot_change_grid(
     Create a 5-row x 3-column plot:
 
     Columns:
-        1 = CCSM future - historical
-        2 = GFDL future - historical
-        3 = Multi-model mean Δ
+        1 = Multi-model mean (historical)
+        2 = Multi model mean (future - historical)
+        3 = CCSM - GFDL (future)
     """
 
     cfg = PLOT_CONFIGS[plot_type]
@@ -216,10 +65,8 @@ def plot_change_grid(
     varnames = cfg["varnames"]
     var_labels = cfg["labels"]
 
-    path_to_data = globalvars.path_to_data
-
     # ============================================================
-    # Setup
+    # Figure setup
     # ============================================================
     mapcrs = ccrs.Mercator()
     datacrs = ccrs.PlateCarree()
@@ -234,14 +81,20 @@ def plot_change_grid(
     set_font(current_dpi, scaling_factor)
 
     nrows = len(varnames)
+    ncols = 3
 
     gs = GridSpec(
-        nrows,
-        4,
-        width_ratios=[1, 1, 1, 0.05],
-        hspace=0.05,
+        nrows, 
+        ncols+3, 
+        height_ratios=[1]*nrows, 
+        width_ratios=[1, 0.05, 0.25, 1, 1, 0.05], 
+        hspace=0.05, 
         wspace=0.05
     )
+
+    # -------------------------------------------------------------
+    # Labels
+    # -------------------------------------------------------------
 
     labels = list(string.ascii_lowercase)
     label_idx = 0
@@ -258,169 +111,149 @@ def plot_change_grid(
     # ============================================================
     for i, varname in enumerate(varnames):
 
-        print(f"Plotting {varname}")
-
-        # --------------------------------------------------------
-        # Load datasets
-        # --------------------------------------------------------
-        hist = {}
-        future = {}
-
-        for model in MODELS:
-
-            hist[model] = load_dataset(
-                path_to_data,
-                model,
-                "hist",
-                plot_type,
-                varname,
-                season,
-                option
-            )
-
-            future[model] = load_dataset(
-                path_to_data,
-                model,
-                "rcp85",
-                plot_type,
-                varname,
-                season,
-                option
-            )
-
-        # --------------------------------------------------------
-        # Compute differences
-        # --------------------------------------------------------
-        ccsm_diff = (
-            future["ccsm"][varname]
-            - hist["ccsm"][varname]
+        fields, titles, units = load_preprocessed_wrf_metrics(
+            varname, 
+            plot_type, 
+            season, 
+            option
         )
-
-        gfdl_diff = (
-            future["gfdl"][varname]
-            - hist["gfdl"][varname]
-        )
-
-        mmm_diff = xr.concat(
-            [ccsm_diff, gfdl_diff],
-            dim="model"
-        ).mean("model")
-
-        fields = [
-            ccsm_diff,
-            gfdl_diff,
-            mmm_diff
-        ]
-
-        titles = [
-            "ΔCCSM (Future − Historical)",
-            "ΔGFDL (Future − Historical)",
-            "Multi-model Mean Δ"
-        ]
-
-        lons = ccsm_diff.lon.values
-        lats = ccsm_diff.lat.values
-
+        
+        lons = fields[0].lon.values
+        lats = fields[0].lat.values
+    
         (
-            _,
-            _,
-            _,
+            levs_clim,
+            cmap_clim,
+            norm_clim,
             levs_diff,
             cmap_diff,
-            norm_diff
+            norm_diff,
         ) = get_colormap_and_levels(
             cfg["cmap_key"],
             varname
         )
+        print(f"Plotting {varname}")
 
         # --------------------------------------------------------
         # Plot columns
         # --------------------------------------------------------
-        diff_handles = []
+        grid_cols = [0, 3, 4]
 
-        for j in range(3):
-
+        for k, gcol in enumerate(grid_cols):
+        
             ax = fig.add_subplot(
-                gs[i, j],
-                projection=mapcrs
+                gs[i, gcol],
+                projection=mapcrs,
             )
-
-            ax.set_extent([
-                lonmin,
-                lonmax,
-                latmin,
-                latmax
-            ])
-
+        
+            ax.set_extent([lonmin, lonmax, latmin, latmax])
+        
             ax.coastlines(resolution="50m")
-
+        
             ax.add_feature(
                 cfeature.BORDERS,
                 linewidth=0.75,
-                edgecolor='k'
+                edgecolor="k",
             )
-
-            cf = ax.contourf(
-                lons,
-                lats,
-                fields[j],
-                levels=levs_diff,
-                cmap=cmap_diff,
-                norm=norm_diff,
-                transform=datacrs,
-                extend='both'
-            )
-
-            diff_handles.append(cf)
-
+        
+            # -----------------------------
+            # Historical climatology
+            # -----------------------------
+            if k == 0:
+        
+                cf = ax.contourf(
+                    lons,
+                    lats,
+                    fields[k],
+                    levels=levs_clim,
+                    cmap=cmap_clim,
+                    norm=norm_clim,
+                    transform=datacrs,
+                    extend=cfg["extend"],
+                )
+        
+            # -----------------------------
+            # Difference panels
+            # -----------------------------
+            else:
+        
+                cf = ax.contourf(
+                    lons,
+                    lats,
+                    fields[k],
+                    levels=levs_diff,
+                    cmap=cmap_diff,
+                    norm=norm_diff,
+                    transform=datacrs,
+                    extend="both",
+                )
+        
             if i == 0:
-                ax.set_title(titles[j])
-
-            # panel labels
+                ax.set_title(titles[k])
+        
             ax.text(
                 0.05,
                 0.96,
                 labels[label_idx],
                 transform=ax.transAxes,
-                va='top',
-                ha='left',
-                bbox=bbox_dict
+                va="top",
+                ha="left",
+                bbox=bbox_dict,
             )
-
+        
             label_idx += 1
+    
+            # --------------------------------------------------------
+            # Colorbar
+            # --------------------------------------------------------
+            
+            if k == 0:
 
-        # --------------------------------------------------------
-        # Colorbar
-        # --------------------------------------------------------
-        cbax = fig.add_subplot(gs[i, -1])
+                cbax = fig.add_subplot(gs[i, 1])
+            
+                cb = Colorbar(
+                    ax=cbax,
+                    mappable=cf,
+                    orientation="vertical",
+                )
+            
+                if plot_type == "ros_frequency_clim":
+                    if varname == "ros":
+                        cb.set_label("ROS (days yr$^{-1}$)")
+                    else:
+                        cb.set_label(units)
+                else:
+                    cb.set_label(
+                        f"{var_labels[i]} ({units})"
+                    )
 
-        cb = Colorbar(
-            ax=cbax,
-            mappable=diff_handles[0],
-            orientation="vertical"
-        )
+            elif k == 2:
 
-        units = (
-            "days yr$^{-1}$"
-            if varname == "ros"
-            else hist["ccsm"][varname]
-            .attrs.get("units", "")
-        )
-        if plot_type == "ros_frequency_clim":
-            cb.set_label(
-                f"Δ {units}"
-            )
-        else:
-            cb.set_label(
-                f"Δ{var_labels[i]} ({units})"
-            )
+                cbax = fig.add_subplot(gs[i, -1])
+            
+                cb = Colorbar(
+                    ax=cbax,
+                    mappable=cf,
+                    orientation="vertical",
+                )
+            
+                if plot_type == "ros_frequency_clim":
+                    if varname == "ros":
+                        cb.set_label(r"$\Delta$ ROS (days yr$^{-1}$)")
+                    else:
+                        cb.set_label(rf"$\Delta$ {units}")
+                else:
+                    cb.set_label(
+                        rf"$\Delta$ {var_labels[i]} ({units})"
+                    )
 
     # ============================================================
     # Save Figure
     # ============================================================
     outname = cfg["outfile"].format(
         season=season,
-        option=option
+        option=option,
+        plot_name="map",
     )
 
     os.makedirs(
@@ -443,9 +276,9 @@ def plot_change_grid(
 # Driver
 # ============================================================
 if __name__ == "__main__":
-
+    path_to_data = globalvars.path_to_data
     seasons = ["ONDJFM"]
-    options = ["strict", "flexible"]
+    options = ["strict"]
 
     # --- 95th percentile climatology ---
     for season in seasons:
@@ -455,6 +288,7 @@ if __name__ == "__main__":
         )
 
         plot_change_grid(
+            path_to_data,
             "95th_percentile_clim",
             season
         )
@@ -469,9 +303,10 @@ if __name__ == "__main__":
             )
 
             plot_change_grid(
+                path_to_data,
                 "ros_frequency_clim",
                 season,
-                option
+                option,
             )
 
             print(
@@ -480,7 +315,8 @@ if __name__ == "__main__":
             )
 
             plot_change_grid(
+                path_to_data,
                 "ros_intensity_clim",
                 season,
-                option
+                option,
             )

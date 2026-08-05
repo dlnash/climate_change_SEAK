@@ -70,6 +70,23 @@ polys = polys.to_crs(epsg=4326)
 # Map and Label Definitions
 # ---------------------------------------------------------------------
 
+# --------------------------------------------------
+# GHCN station locations for historical evaluation
+# --------------------------------------------------
+station_labels = {
+    "Juneau": (-134.55606, 58.354),
+    "Yakutat": (-139.67103, 59.51211),
+    "Auke Bay": (-134.64500, 58.38140),
+    "Annette": (-131.57870, 55.03890),
+}
+
+station_styles = {
+    "Juneau": ("o", "tab:blue"),
+    "Yakutat": ("s", "tab:orange"),
+    "Auke Bay": ("^", "tab:green"),
+    "Annette": ("D", "tab:red"),
+}
+
 feature_labels = {
     'Chichagof Island': (-135.833242, 57.7),
     'Baranof Island': (-135.2, 56.971734),
@@ -174,6 +191,23 @@ for label, (x, y) in feature_labels.items():
         **style
     )
 
+
+# Plot stations
+for name, (lon, lat) in station_labels.items():
+
+    marker, color = station_styles[name]
+
+    ax.scatter(
+        lon,
+        lat,
+        marker=marker,
+        s=60,
+        facecolor=color,
+        edgecolor="k",
+        linewidth=0.7,
+        transform=ccrs.PlateCarree(),
+        zorder=201,
+    )
     
 # ---------------------------------------------------------------------
 # Colorbar and Save Figure

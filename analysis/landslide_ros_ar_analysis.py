@@ -25,15 +25,16 @@ import cmocean.cm as cmo
 # Local modules
 sys.path.append('../modules/')
 import globalvars
-from wrf_utils import load_preprocessed_WRF_data
+from wrf_preprocess import preprocess_WRF_ros, compute_ros_frequency, compute_ros_intensity, save_ros_frequency, load_preprocessed_WRF_data
 from wrf_preprocess import preprocess_WRF_ros
+from utils import get_startmon_and_endmon, select_months_ds
 from plotter import set_font
 
 # ---------------------------------------------------------------------
 # Update ROS choice
 # ---------------------------------------------------------------------
 option = 'strict' # strict or flexible
-
+model = 'cfsr'
 # ---------------------------------------------------------------------
 # Helper Functions
 # ---------------------------------------------------------------------
@@ -117,10 +118,10 @@ if __name__ == "__main__":
     df = df.loc[(df.index >= '1980-01-01') & (df.index <= '2019-12-31')]
 
     # --- Load WRF data once ---
-    ds = load_preprocessed_WRF_data('cfsr', 'snow', anomaly=False)
-    ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option)
-    ivt = load_preprocessed_WRF_data('cfsr', 'ivt', anomaly=False)
+    ds = load_preprocessed_WRF_data(model, 'historical', 'snow')
+    ivt = load_preprocessed_WRF_data(model, 'historical', 'ivt')
     ds = xr.merge([ds, ivt], compat="no_conflicts")
+    ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option)
 
     # --- Load AR dataset once ---
     ar_ds = xr.open_dataset(globalvars.path_to_data + 'downloads/globalARcatalog_ERA5_1940-2024_v4.0.nc')
@@ -143,7 +144,7 @@ if __name__ == "__main__":
         ds_sub = ds.sel(time=slice(start_date, end_date))
         iy, ix = find_nearest_indices(ds_sub, lat, lon)
         ds_point = ds_sub.isel(y=iy, x=ix)
-
+        print(ds_point)
         # Subset AR data
         ar = ar_ds.sel(time=slice(start_date, end_date))
         # ar = ar.sel(lat=lat, lon=lon, method='nearest')
@@ -169,5 +170,5 @@ if __name__ == "__main__":
 
     # --- Save summary DataFrame ---
     summary_df = pd.DataFrame(summary)
-    summary_df.to_csv(f'../out/landslide_summary_{option}.csv', index=False)
-    print(f"✅ Saved summary to: {figs_dir / 'landslide_summary.csv'}")
+    summary_df.to_csv(f'../out/landslide_summary_{option}_{model}.csv', index=False)
+    print(f"✅ Saved summary to: {figs_dir / f"landslide_summary_{option}_{model}.csv"}")

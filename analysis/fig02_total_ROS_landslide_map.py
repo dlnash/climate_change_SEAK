@@ -27,27 +27,28 @@ import cmocean.cm as cmo
 sys.path.append('../modules')
 from plotter import draw_basemap, set_font
 import globalvars
-from wrf_utils import load_preprocessed_WRF_data
+from wrf_utils import load_preprocessed_dataset
 from wrf_preprocess import preprocess_WRF_ros
 
 # ---------------------------------------------------------------------
 # Update ROS choice
 # ---------------------------------------------------------------------
 option = 'strict' # strict or flexible
-
+model = "cfsr"
 # ---------------------------------------------------------------------
 # Load Data
 # ---------------------------------------------------------------------
-# --- read the non-anomaly snow data ---
-ds = load_preprocessed_WRF_data('cfsr', 'snow', anomaly=False)
-
-# --- compute ROS information ---
-ds = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option, season='ONDJFM')
-
-# --- Sum over time: number of ROS days per grid cell ---
-ros = ds['ros'].groupby('time.year').sum('time').rename({'year': 'time'})
-ros.attrs['units'] = "ROS (d yr$^{{-1}}$)"
-ros_sum = ros.mean('time', keep_attrs=True)
+ds = load_preprocessed_dataset(
+    globalvars.path_to_data,
+    model=model,
+    scenario="historical",
+    plot_type="ros_frequency_clim",
+    varname="ros",
+    season="ONDJFM",
+    option=option
+)
+print(ds)
+ros_sum = ds.ros
 print(ros_sum.values.max())
 print(ros_sum.quantile(q=0.98).values)
 # print(ros_sum.mean(skipna=True).values)
@@ -162,7 +163,7 @@ cb = fig.colorbar(cf, cax=cax, orientation='vertical')
 cb.set_label('Mean ROS Frequency (d yr$^{-1}$)', fontsize=11)
 cb.ax.tick_params(labelsize=10)
 
-output_path = Path(f'../figs/cfsr_ros_landslide_{option}.png')
+output_path = Path(f'../figs/{model}_ros_landslide_{option}.png')
 fig.savefig(output_path, bbox_inches='tight', dpi=fig.dpi)
 
 print(f"Saved figure to: {output_path.resolve()}")

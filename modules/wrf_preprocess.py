@@ -6,11 +6,14 @@ Description: preprocess functions for AK 4 km WRF simulations downloaded from ht
 """
 
 ## Imports
+import os
+import glob
 import numpy as np
 import xarray as xr
 import pandas as pd
 from wrf import interplevel
 
+import globalvars
 from wrf_utils import filter_vars
 from time_helpers import find_date_based_on_filename
 from utils import get_startmon_and_endmon, select_months_ds
@@ -295,3 +298,71 @@ def compute_ros_frequency(ds):
 
 
 
+def load_preprocessed_WRF_data(model, scenario, varname):
+
+    datadir = os.path.join(
+            globalvars.path_to_data,
+            f"preprocessed/SEAK-WRF/{model}/{scenario}/{varname}/"
+        )
+    
+    fname_pattern = os.path.join(
+        datadir,
+        f"WRFDS_{varname}_*.nc"
+    )
+
+    if not glob.glob(fname_pattern):
+        raise FileNotFoundError(
+            f"No files found: {fname_pattern}"
+        )
+    
+    ds = xr.open_mfdataset(fname_pattern,
+                          engine='netcdf4',
+                           combine='by_coords')
+    
+    ## rename coords
+    ds = ds.rename({
+        "Time": "time",
+        "south_north": "y",
+        "west_east": "x"
+    })
+    
+    return ds
+    
+def save_netcdf(ds, model, scenario, varname, season, option, filename_suffix):
+    path_to_data = globalvars.path_to_data
+    datadir = os.path.join(
+    path_to_data,
+    f"preprocessed/SEAK-WRF/{model}/{scenario}/trends/"
+)
+    os.makedirs(datadir, exist_ok=True)
+    if option == None:
+        outpath = os.path.join(datadir, f"{varname}_{model}_{season}_{filename_suffix}.nc")
+    else:
+        outpath = os.path.join(datadir, f"{varname}_{model}_{season}_{option}_{filename_suffix}.nc")
+    ds.to_netcdf(path=outpath, mode='w', format='NETCDF4')
+    print(f"Saved: {outpath}")
+
+def compute_ros_intensity(ds, option, season, model, scenario):
+    ds_ros_yearly = preprocess_WRF_ros(ds, temporal_resolution='yearly', option=option, season=season).mean('time')
+    units_dict = {
+                'ros': 'd yr$^{-1}$',
+                'pcpt': 'mm d$^{-1}$',
+                'snow': 'mm d$^{-1}$',
+                'delsnowh': 'mm d$^{-1}$',
+                'ros_intensity': 'mm d$^{-1}$',
+            }
+
+    for var, units in units_dict.items():
+        if var in ds_ros_yearly:
+            ds_ros_yearly[var].attrs['units'] = units
+
+    save_netcdf(ds_ros_yearly, model, scenario, 'snow', season, option, "ros_intensity_clim")
+
+def save_ros_frequency(ds, option, season, model, scenario):
+    ds_ros_daily = preprocess_WRF_ros(ds, temporal_resolution='daily', option=option, season=season)
+    ivt = load_preprocessed_WRF_data(model, scenario, 'ivt')
+    mon_s, mon_e = get_startmon_and_endmon(season)
+    ivt = select_months_ds(ivt, mon_s, mon_e, time_varname='time')
+    ds_ros_daily = xr.merge([ds_ros_daily, ivt], compat="no_conflicts")
+    ds_out = compute_ros_frequency(ds_ros_daily)
+    save_netcdf(ds_out, model, scenario, 'snow', season, option, "ros_frequency_clim")

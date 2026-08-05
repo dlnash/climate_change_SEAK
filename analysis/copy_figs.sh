@@ -18,6 +18,7 @@ fig_names=(
     "topographic_map"
     "cfsr_ros_landslide_strict"
     "ros_case"
+    "CCSM_GFDL_evaluation"
     "clim/ONDJFM_95th_percentile_clim_change_map"
     "clim/ONDJFM_95th_percentile_clim_change_hexbin"
     "ros_strict/ONDJFM/ONDJFM_ROS_FREQ_CHANGE_map"
@@ -26,7 +27,7 @@ fig_names=(
     "ros_strict/ONDJFM/ONDJFM_ROS_INTENSITY_CHANGE_hexbin"
 )
 
-fig_nums=(1 2 3 4 5 6 7 8 9)
+fig_nums=(1 2 3 4 5 6 7 8 9 10)
 
 # --- Ensure directories exist ---
 mkdir -p "$finaldir"

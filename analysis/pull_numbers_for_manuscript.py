@@ -23,12 +23,19 @@ from pathlib import Path
 # Add path to custom modules
 sys.path.append('../modules/')
 import globalvars
+from wrf_utils import load_preprocessed_wrf_metrics
+from plot_configs import PLOT_CONFIGS, MODELS, SCENARIOS
 from wrf_rio import wrf_prepare_for_rio
 
 # ---------------------------------------------------------------------
 # Process
 # ---------------------------------------------------------------------
-def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
+def compute_area_avg_max_min(
+    path_to_data,
+    plot_type,
+    season,
+    option=None,
+):
     """
     Compute area-averaged statistics for each model and variable, including
     model minus CFSR differences.
@@ -37,7 +44,7 @@ def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
     ----------
     models : list of str
         Model names (first should be 'cfsr' for baseline)
-    ssn : str
+    season : str
         Season label (e.g., 'DJF')
     option: str
         choice in ROS category ('strict' or 'flexible')
@@ -52,15 +59,10 @@ def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
         DataFrame containing model, variable, polygon name, mean, min, max, and model–CFSR diff
     """
 
-    # --- define variable names for each suffix ---
-    if fsuffix == "ros_frequency_clim":
-        varnames = ['ros', 'ivt', 'pcpt', 'snow', 'delsnow', 'delsnowh']
-    elif fsuffix == "ros_intensity_clim":
-        varnames = ["ros", "pcpt", "snow", "delsnow", "delsnowh", "ros_intensity"]
-    elif fsuffix == "95th_percentile_clim":
-        varnames = ["ivt", "uv", "freezing_level", "pcpt", "snow"]
-    else:
-        raise ValueError(f"Unknown fsuffix: {fsuffix}")
+    cfg = PLOT_CONFIGS[plot_type]
+
+    varnames = cfg["varnames"]
+    var_labels = cfg["labels"]
 
     # --- load shapefile and subset ---
     fp = os.path.join(globalvars.path_to_data, 'downloads/AK_climate_divisions/AK_divisions_NAD83.shp')
@@ -71,70 +73,35 @@ def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
     results = []
 
     # --- loop through variables ---
-    for varname in varnames:
-        # --- load CFSR reference ---
-        if fsuffix == "95th_percentile_clim":
-            cfsr_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/{varname}_cfsr_{ssn}_{fsuffix}.nc")
-        else:
-            cfsr_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/cfsr/trends/snow_cfsr_{ssn}_{option}_{fsuffix}.nc")
+    for i, varname in enumerate(varnames):
+        fields, titles, units = load_preprocessed_wrf_metrics(
+            varname, 
+            plot_type, 
+            season, 
+            option
+        )
 
-        if not os.path.exists(cfsr_path):
-            print(f"⚠️ Missing CFSR file for {varname}: {cfsr_path}")
-            continue
+        # --- loop through MMM Historical, MMM Future, Model Difference --- 
+        for k, field in enumerate(fields):
 
-        ds_cfsr = xr.open_dataset(cfsr_path)
-        if varname not in ds_cfsr:
-            print(f"⚠️ Variable {varname} not in CFSR file")
-            continue
-
-        da_cfsr = ds_cfsr[varname]
-        # prepare for rioxarray
-        da_cfsr = wrf_prepare_for_rio(da_cfsr)
-
-        # reproject shapefile to match WRF CRS
-        polys = polys.to_crs(da_cfsr.rio.crs)
-
-        # --- loop through each model (skip first since it's CFSR itself) ---
-        for model in models:
-            if model == "cfsr":
-                continue
-
-            if fsuffix == "95th_percentile_clim":
-                model_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/{varname}_{model}_{ssn}_{fsuffix}.nc")
-            else:
-                model_path = os.path.join(path_to_data, f"preprocessed/SEAK-WRF/{model}/trends/snow_{model}_{ssn}_{option}_{fsuffix}.nc")
-
-            if not os.path.exists(model_path):
-                print(f"⚠️ Missing file: {model_path}")
-                continue
-
-            ds_model = xr.open_dataset(model_path)
-            if varname not in ds_model:
-                print(f"⚠️ Variable {varname} not in {model_path}")
-                continue
-
-            da_model = ds_model[varname]
             # prepare for rioxarray
-            da_model = wrf_prepare_for_rio(da_model)
-
-            # --- compute model - CFSR difference before clipping ---
-            # Align grids before subtracting
-            da_model, da_cfsr_aligned = xr.align(da_model, da_cfsr, join="inner")
-            da_diff = da_model - da_cfsr_aligned
+            # da_cfsr = ds_cfsr[varname]
+            da = wrf_prepare_for_rio(field)
+    
+            # reproject shapefile to match WRF CRS
+            polys = polys.to_crs(da.rio.crs)
 
             # print(f"\nVariable: {varname}, Model: {model}")
-            # print(f"  Raster CRS: {da_model.rio.crs}")
+            # print(f"  Raster CRS: {da.rio.crs}")
             # print(f"  Polygon CRS: {polys.crs}")
-            # print(f"  Raster bounds: {da_model.rio.bounds()}")
+            # print(f"  Raster bounds: {da.rio.bounds()}")
             # print(f"  Polygon bounds: {polys.geometry.bounds}")
 
 
             # --- loop through polygons ---
             for _, poly in polys.iterrows():
                 # Clip both datasets to polygon
-                model_clip = da_model.rio.clip([poly.geometry], polys.crs, drop=True)
-                cfsr_clip  = da_cfsr_aligned.rio.clip([poly.geometry], polys.crs, drop=True)
-                diff_clip  = da_diff.rio.clip([poly.geometry], polys.crs, drop=True)
+                da_clip = da.rio.clip([poly.geometry], polys.crs, drop=True)
 
 
                 # Compute stats
@@ -144,28 +111,26 @@ def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
                     "max": float(da.max().values)
                 }
 
-                model_stats = stats(model_clip)
-                cfsr_stats = stats(cfsr_clip)
-                diff_stats = stats(diff_clip)
+                da_stats = stats(da_clip)
 
                 results.append({
-                    "season": ssn,
-                    "fsuffix": fsuffix,
+                    "season": season,
+                    "plot_type": plot_type,
                     "variable": varname,
                     "region": poly["Name"],
-                    "model": model,
-                    "mean_model": model_stats["mean"],
-                    "min_model": model_stats["min"],
-                    "max_model": model_stats["max"],
-                    "mean_cfsr": cfsr_stats["mean"],
-                    "min_cfsr": cfsr_stats["min"],
-                    "max_cfsr": cfsr_stats["max"],
-                    "mean_diff": diff_stats["mean"],
-                    "min_diff": diff_stats["min"],
-                    "max_diff": diff_stats["max"]
+                    "metric_name": titles[k],
+                    "mean_model": da_stats["mean"],
+                    "min_model": da_stats["min"],
+                    "max_model": da_stats["max"],
                 })
 
     df = pd.DataFrame(results)
+
+    outfile = os.path.join(path_to_data, f"processed_summary_stats_with_diffs_{option}_{season}_{plot_type}.csv")
+    df.to_csv(outfile, index=False)
+    print(f"\n✅ Saved summary statistics with differences to {outfile}")
+
+
     return df
 
 
@@ -174,21 +139,46 @@ def compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix):
 # ============================================================
 if __name__ == "__main__":
     path_to_data = globalvars.path_to_data
-    models = ["cfsr", "ccsm", "gfdl"]
-    ssn_lst = ["ONDJFM"]
-    options = ["strict", "flexible"]
+    seasons = ["ONDJFM"]
+    options = ["strict"]
 
+    # --- 95th percentile climatology ---
+    for season in seasons:
+
+        print(
+            f"Creating 95th percentile df: {season}"
+        )
+
+        compute_area_avg_max_min(
+            path_to_data,
+            "95th_percentile_clim",
+            season
+        )
+
+    # --- ROS plots ---
     for option in options:
-        fsuffix_lst = ["95th_percentile_clim", "ros_intensity_clim", "ros_frequency_clim"]
-    
-        all_results = []
-        for fsuffix in fsuffix_lst:
-            for ssn in ssn_lst:
-                print(f"Processing {fsuffix} for {ssn}")
-                df = compute_area_avg_max_min(models, ssn, option, path_to_data, fsuffix)
-                all_results.append(df)
-    
-        final_df = pd.concat(all_results, ignore_index=True)
-        outfile = os.path.join(path_to_data, f"processed_summary_stats_with_diffs_{option}.csv")
-        final_df.to_csv(outfile, index=False)
-        print(f"\n✅ Saved summary statistics with differences to {outfile}")
+        for season in seasons:
+
+            print(
+                f"Creating ROS frequency df: "
+                f"{option} {season}"
+            )
+
+            compute_area_avg_max_min(
+                path_to_data,
+                "ros_frequency_clim",
+                season,
+                option,
+            )
+
+            print(
+                f"Creating ROS intensity df: "
+                f"{option} {season}"
+            )
+
+            compute_area_avg_max_min(
+                path_to_data,
+                "ros_intensity_clim",
+                season,
+                option,
+            )

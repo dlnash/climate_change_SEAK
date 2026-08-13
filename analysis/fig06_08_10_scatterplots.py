@@ -34,6 +34,10 @@ from wrf_utils import load_preprocessed_wrf_metrics, read_wrf_terrain
 from colormaps import get_colormap_and_levels
 from plot_configs import PLOT_CONFIGS, MODELS, SCENARIOS
 
+import rioxarray  # for spatial clipping
+from wrf_rio import wrf_prepare_for_rio
+from wrf_crs import load_climate_division_shapefile
+
 # ---------------------------------------------------------------------
 # Process
 # ---------------------------------------------------------------------
@@ -58,10 +62,15 @@ def plot_clim_diff_scatter(
     varnames = cfg["varnames"]
     var_labels = cfg["labels"]
 
+    # --- load shapefile and subset ---
+    polys = load_climate_division_shapefile()
+    # Dissolve into one multipolygon
+    study_area = polys.dissolve()
+
     # -------------------------------------------------------------
     # Figure setup
     # -------------------------------------------------------------
-    fig = plt.figure(figsize=(9, 14))
+    fig = plt.figure(figsize=(9.75, 14))
     fig.dpi = 300
 
     current_dpi = 300
@@ -108,9 +117,6 @@ def plot_clim_diff_scatter(
             option
         )
 
-        lat2d = fields[0].lat.values
-        y_flat = lat2d.flatten()[mask]
-
         # ---------------------------------------------------------
         # Colormap
         # ---------------------------------------------------------
@@ -135,6 +141,23 @@ def plot_clim_diff_scatter(
         grid_cols = [0, 3, 4]
 
         for k, gcol in enumerate(grid_cols):
+
+            # prepare for rioxarray
+            da = wrf_prepare_for_rio(fields[k])
+            
+            # Reproject once after reading the raster
+            study_area = study_area.to_crs(da.rio.crs)
+
+            # Clip both datasets to polygon
+            da_clip = da.rio.clip(
+                study_area.geometry,
+                study_area.crs,
+                drop=True
+            )
+
+            lat2d = da_clip.lat.values
+            y_flat = lat2d.flatten()[mask]
+            cfield = da_clip.values.flatten()[mask]
         
             ax = fig.add_subplot(
                 gs[i, gcol],
@@ -142,8 +165,6 @@ def plot_clim_diff_scatter(
 
             ax.set_xlim(0, 1900)
             ax.set_ylim(54.5, 60)
-
-            cfield = fields[k].values.flatten()[mask]
 
             # -----------------------------
             # Historical climatology
@@ -193,7 +214,8 @@ def plot_clim_diff_scatter(
 
             if i == nrows - 1:
                 ax.set_xlabel("Elevation (m)")
-
+            else:
+                ax.set_xticklabels([])
             if k == 0:
                 ax.set_ylabel("Latitude (°N)")
             else:

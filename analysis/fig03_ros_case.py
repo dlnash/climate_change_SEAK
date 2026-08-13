@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Filename:    fig4_ros_case.py
+Filename:    fig03_ros_case.py
 Author:      Deanna Nash, dnash@ucsd.edu
 Description: 
     Create a four-panel figure showing:

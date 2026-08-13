@@ -12,6 +12,9 @@ from pyproj import CRS
 import globalvars
 path_to_data = globalvars.path_to_data
 
+import rioxarray  # for spatial clipping
+from wrf_crs import load_climate_division_shapefile
+
 def wrf_prepare_for_rio(da, x_dim="x", y_dim="y"):
     """
     Prepare a WRF DataArray for rioxarray spatial operations.
@@ -73,3 +76,46 @@ def wrf_prepare_for_rio(da, x_dim="x", y_dim="y"):
     da.rio.write_crs(crs.to_wkt(), inplace=True)
 
     return da
+
+def read_wrf_terrain():
+    # -------------------------------------------------------------
+    # Read terrain
+    # -------------------------------------------------------------
+    elev_fname = os.path.join(
+        path_to_data,
+        "downloads/SEAK-WRF/geo_southeast.nc"
+    )
+
+    elev_ds = xr.open_dataset(elev_fname)
+    elev_ds = filter_vars(
+        elev_ds.squeeze(),
+        elev_fname,
+        "hgt"
+    )
+
+    # --- load shapefile and subset ---
+    polys = load_climate_division_shapefile()
+    # Dissolve into one multipolygon
+    study_area = polys.dissolve()
+
+    # prepare for rioxarray
+    da = wrf_prepare_for_rio(elev_ds, x_dim="west_east", y_dim="south_north")
+    
+    # Reproject once after reading the raster
+    study_area = study_area.to_crs(da.rio.crs)
+
+    # Clip both datasets to polygon
+    da_clip = da.rio.clip(
+        study_area.geometry,
+        study_area.crs,
+        drop=True
+    )
+
+    terrain = da_clip["hgt"].values
+    landmask = da_clip["landmask"].values
+    land_mask_bool = landmask == 1
+
+    mask = land_mask_bool.flatten()
+    x_flat = terrain.flatten()[mask]
+
+    return mask, x_flat

@@ -72,7 +72,7 @@ PLOT_CONFIGS = {
             "ros_frequency_clim",
 
         "extend":
-            "max",
+            "both",
     },
 
     "ros_intensity_clim": {

@@ -196,7 +196,7 @@ def preprocess_WRF_freezing_level(ds: xr.Dataset, fname: str) -> xr.Dataset:
     
     return ds
 
-def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', option='strict', season='NDJFMA') -> xr.Dataset:
+def preprocess_WRF_ros(ds: xr.Dataset, temporal_resolution: str = 'daily', option='strict', season='ONDJFM') -> xr.Dataset:
     """
     Preprocess WRF dataset to compute rain-on-snow (ROS) diagnostics.
 

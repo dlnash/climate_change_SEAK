@@ -44,6 +44,83 @@ def find_nearest_indices(ds, lat, lon):
     iy, ix = np.unravel_index(dist.argmin(), dist.shape)
     return iy, ix
 
+def calculate_climatology_exposure(
+    ros_ds,
+    ar_ds,
+    lat,
+    lon,
+    study_start="1981-01-01",
+    study_end="2019-12-31"
+):
+    """
+    Calculate the number of AR and ROS days at a landslide location
+    over the full climatological study period.
+
+    ROS:
+        ROS is identified at the nearest WRF/CFSR grid cell to the
+        landslide location.
+
+    AR:
+        AR is identified if an AR occurs anywhere within +/- 1 degree
+        latitude and longitude of the landslide location.
+
+    Parameters
+    ----------
+    ros_ds : xarray.DataArray
+        Daily ROS dataset with 2D lat/lon coordinates.
+    ar_ds : xarray.DataArray
+        AR dataset with lat/lon coordinates.
+    lat : float
+        Landslide latitude.
+    lon : float
+        Landslide longitude.
+    study_start : str
+        Start of climatological period.
+    study_end : str
+        End of climatological period.
+
+    Returns
+    -------
+    ros_days : int
+        Number of ROS days at the landslide location.
+    ar_days : int
+        Number of AR days within the +/- 1 degree box.
+    """
+
+    # ---------------------------------------------------------------
+    # ROS exposure
+    # ---------------------------------------------------------------
+
+    ros_sub = ros_ds.sel(
+        time=slice(study_start, study_end)
+    )
+
+    # Find nearest WRF/CFSR grid cell
+    iy, ix = find_nearest_indices(ros_sub, lat, lon)
+
+    ros_point = ros_sub.isel(y=iy, x=ix)
+
+    # Count days with ROS
+    ros_days = int((ros_point == 1).sum().item())
+
+    # ---------------------------------------------------------------
+    # AR exposure
+    # ---------------------------------------------------------------
+
+    ar_sub = ar_ds.sel(
+        time=slice(study_start, study_end),
+        lat=slice(lat + 1, lat - 1),
+        lon=slice(lon - 1, lon + 1)
+    )
+
+    # Collapse to daily maximum and across the spatial box
+    ar_sub = ar_sub.resample(time="1D").max(["lat", "lon"])
+
+    # Count days with an AR
+    ar_days = int((ar_sub > 0).sum().item())
+
+    return ros_days, ar_days
+
 def plot_ros_ar_timeseries(ds_point, ar, start_date, end_date, outpath):
     """Plot ROS, AR, IVT, Rain, Snow, and ΔSnowH time series."""
     print(start_date, end_date)
@@ -135,10 +212,22 @@ if __name__ == "__main__":
 
     # --- Iterate through landslides ---
     for i, row in df.iterrows():
-        start_date = pd.to_datetime(row['Day_min'], format='%m/%d/%y', errors='coerce') - pd.Timedelta(days=1)
-        end_date = pd.to_datetime(row['Day_max'], format='%m/%d/%y', errors='coerce') + pd.Timedelta(days=1)
         lat = row['Lat']
         lon = row['Lon']
+        
+        # --- Calculate climatological exposure ---
+        ros_clim_days, ar_clim_days = calculate_climatology_exposure(
+            ds['ros'],
+            ar_ds,
+            lat,
+            lon,
+            study_start="1981-01-01",
+            study_end="2019-12-31"
+        )
+
+        start_date = pd.to_datetime(row['Day_min'], format='%m/%d/%y', errors='coerce') - pd.Timedelta(days=1)
+        end_date = pd.to_datetime(row['Day_max'], format='%m/%d/%y', errors='coerce') + pd.Timedelta(days=1)
+
         print(start_date, end_date, lat, lon)
         # Subset WRF data
         ds_sub = ds.sel(time=slice(start_date, end_date))
@@ -152,9 +241,9 @@ if __name__ == "__main__":
         ar = ar.resample(time="1D").max(["lat", "lon"])
         ar_mask = (ar > 0).values.squeeze()
 
-        # Save figure
-        outpath = figs_dir / f"landslide_{i.strftime('%Y%m%d')}_{lat:.2f}_{lon:.2f}.png"
-        plot_ros_ar_timeseries(ds_point, ar_mask, start_date, end_date, outpath)
+        # # Save figure
+        # outpath = figs_dir / f"landslide_{i.strftime('%Y%m%d')}_{lat:.2f}_{lon:.2f}.png"
+        # plot_ros_ar_timeseries(ds_point, ar_mask, start_date, end_date, outpath)
 
         # Compute summary stats
         max_ros = float(ds_point['ros'].max())
@@ -165,10 +254,81 @@ if __name__ == "__main__":
             'lat': lat,
             'lon': lon,
             'max_ros': max_ros,
-            'max_ar': max_ar
+            'max_ar': max_ar,
+            'ros_climatology_days': ros_clim_days,
+            'ar_climatology_days': ar_clim_days
         })
 
     # --- Save summary DataFrame ---
     summary_df = pd.DataFrame(summary)
     summary_df.to_csv(f'../out/landslide_summary_{option}_{model}.csv', index=False)
     print(f"✅ Saved summary to: {figs_dir / f"landslide_summary_{option}_{model}.csv"}")
+
+
+    # --- Compute ROS / AR stats dataframe ---
+    total_ros_exposure = summary_df['ros_climatology_days'].sum()
+    total_ar_exposure = summary_df['ar_climatology_days'].sum()
+    
+    n_ls_ros = summary_df['max_ros'].sum()
+    n_ls_ar = summary_df['max_ar'].sum()
+
+    n_landslides = len(summary_df)
+    
+    ros_percent = n_ls_ros / n_landslides * 100
+    ar_percent = n_ls_ar / n_landslides * 100
+    
+    F_ros = n_ls_ros / total_ros_exposure
+    F_ar = n_ls_ar / total_ar_exposure
+    
+    relative_frequency = F_ros / F_ar
+    relative_increase = (relative_frequency - 1) * 100
+
+
+    # --- Build Dataframe --- 
+    table_df = pd.DataFrame({
+        "Statistic": [
+            "Total landslides",
+            "AR days",
+            "ROS days",
+            "AR-associated landslides",
+            "ROS-associated landslides",
+            "AR-associated landslides (%)",
+            "ROS-associated landslides (%)",
+            "Landslides per AR day",
+            "Landslides per ROS day",
+            "ROS-to-AR frequency ratio",
+            "ROS-to-AR frequency increase (%)",
+        ],
+        "Value": [
+            n_landslides,
+            total_ar_exposure,
+            total_ros_exposure,
+            n_ls_ar,
+            n_ls_ros,
+            ar_percent,
+            ros_percent,
+            F_ar,
+            F_ros,
+            relative_frequency,
+            relative_increase,
+        ]
+    })
+    
+    table_df["Value"] = [
+        f"{n_landslides:d}",
+        f"{n_ar_days:d}",
+        f"{n_ros_days:d}",
+        f"{n_ls_ar:d}",
+        f"{n_ls_ros:d}",
+        f"{ar_percent:.1f}",
+        f"{ros_percent:.1f}",
+        f"{F_ar:.2f}",
+        f"{F_ros:.2f}",
+        f"{relative_frequency:.2f}",
+        f"{relative_increase:.1f}",
+    ]
+    
+    table_df.to_csv(
+        f"../out/landslide_normalized_frequency_statistics_{study_start}_{study_end}.csv",
+        index=False
+    )

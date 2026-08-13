@@ -56,50 +56,54 @@ def get_colormap_and_levels(clim_type, varname):
     elif clim_type == "ros_intensity_clim":
         if varname == 'ros':
             levs_clim = np.arange(1, 11, 1); cmap_clim = cmo.dense
-            levs_diff = np.arange(-3, 3.5, 0.5)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-0.5, 0.5))
+            levs_diff = np.arange(-3, 3.5, 0.5); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-0.5, 0.5))
         elif varname == 'pcpt':
             levs_clim = np.arange(25, 80, 5); cmap_clim = cmo.rain
-            levs_diff = np.arange(-20, 24, 4)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-4, 4))
+            levs_diff = np.arange(-20, 24, 4); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-4, 4))
         elif varname == 'snow':
             levs_clim = np.arange(0, 550, 50); cmap_clim = cmo.rain
-            levs_diff = np.arange(-250, 300, 50)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-50, 50))
+            levs_diff = np.arange(-250, 300, 50); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-50, 50))
         elif varname == 'delsnowh':
             levs_clim = np.arange(0, 165, 15); cmap_clim = cmo.rain
-            levs_diff = np.arange(-25, 30, 5)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-5, 5))
+            levs_diff = np.arange(-25, 30, 5); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-5, 5))
         elif varname == 'ros_intensity':
             levs_clim = np.arange(60, 180+12, 12); cmap_clim = cmo.rain
-            levs_diff = np.arange(-25, 30, 5)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-5, 5))
+            levs_diff = np.arange(-25, 30, 5); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-5, 5))
 
         norm_clim = BoundaryNorm(levs_clim, ncolors=cmap_clim.N, clip=True)
+        if isinstance(cmap_diff, str) or hasattr(cmap_diff, 'N'):
+            norm_diff = BoundaryNorm(levs_diff, ncolors=plt.get_cmap(cmap_diff).N if isinstance(cmap_diff, str) else cmap_diff.N, clip=True)
 
     # === ros_frequency_clim ===
     elif clim_type == "ros_frequency_clim":
         if varname == 'ros':
             levs_clim = np.arange(1, 11, 1); cmap_clim = cmo.dense
-            levs_diff = np.arange(-3, 3.5, 0.5)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-0.5, 0.5))
+            levs_diff = np.arange(-3, 3.5, 0.5); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-0.5, 0.5))
         elif varname == 'ivt':
             levs_clim, cmap_clim = np.arange(0, 55, 5), cmo.deep
             levs_diff = np.arange(0, 22, 2);  cmap_diff = cmo.deep
         elif varname == 'pcpt':
             levs_clim, cmap_clim = np.arange(0, 55, 5), cmo.rain
-            levs_diff = np.arange(-10, 12, 2)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-2, 2))
+            levs_diff = np.arange(-10, 12, 2); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-2, 2))
         elif varname == 'delsnow':
             levs_clim, cmap_clim = np.arange(0, 33, 3), cmo.rain
-            levs_diff = np.arange(-10, 12, 2)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-2, 2))
+            levs_diff = np.arange(-10, 12, 2); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-2, 2))
         elif varname == 'delsnowh':
             levs_clim, cmap_clim = np.arange(60, 126, 6), cmo.rain
-            levs_diff = np.arange(-40, 48, 8)
-            cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-8, 8))
+            levs_diff = np.arange(-40, 48, 8); cmap_diff = 'BrBG'
+            # cmap_diff, norm_diff = make_brgr_white_cmap(levs_diff, (-8, 8))
 
         norm_clim = BoundaryNorm(levs_clim, ncolors=cmap_clim.N, clip=True)
+        if isinstance(cmap_diff, str) or hasattr(cmap_diff, 'N'):
+            norm_diff = BoundaryNorm(levs_diff, ncolors=plt.get_cmap(cmap_diff).N if isinstance(cmap_diff, str) else cmap_diff.N, clip=True)
 
     else:
         raise ValueError(f"Unknown climatology type: {clim_type}")

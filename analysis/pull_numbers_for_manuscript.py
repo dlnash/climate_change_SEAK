@@ -26,6 +26,7 @@ import globalvars
 from wrf_utils import load_preprocessed_wrf_metrics
 from plot_configs import PLOT_CONFIGS, MODELS, SCENARIOS
 from wrf_rio import wrf_prepare_for_rio
+from wrf_crs import load_climate_division_shapefile
 
 # ---------------------------------------------------------------------
 # Process
@@ -65,10 +66,7 @@ def compute_area_avg_max_min(
     var_labels = cfg["labels"]
 
     # --- load shapefile and subset ---
-    fp = os.path.join(globalvars.path_to_data, 'downloads/AK_climate_divisions/AK_divisions_NAD83.shp')
-    polys = gpd.read_file(fp)
-    keep_names = ["Northeast Gulf", "North Panhandle", "Central Panhandle", "South Panhandle"]
-    polys = polys[polys["Name"].isin(keep_names)]
+    polys = load_climate_division_shapefile()
 
     results = []
 

@@ -25,6 +25,8 @@ def get_startmon_and_endmon(ssn):
         start_mon, end_mon = (5, 10)
     elif ssn == 'ONDJFM':
         start_mon, end_mon = (10, 3)
+    elif ssn == None:
+        start_mon, end_mon = (1, 12)
 
     return start_mon, end_mon
 

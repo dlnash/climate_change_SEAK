@@ -23,6 +23,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import geopandas as gpd
 
 from matplotlib.gridspec import GridSpec
 from matplotlib.colorbar import Colorbar
@@ -32,10 +33,14 @@ import sys
 sys.path.append('../modules/')
 
 import globalvars
-from wrf_utils import load_preprocessed_wrf_metrics
+from wrf_load_preprocessed_data import load_preprocessed_wrf_metrics
 from plotter import set_font
 from colormaps import get_colormap_and_levels
 from plot_configs import PLOT_CONFIGS, MODELS, SCENARIOS
+
+import rioxarray  # for spatial clipping
+from wrf_rio import wrf_prepare_for_rio
+from wrf_crs import load_climate_division_shapefile
 
 
 # ============================================================
@@ -64,6 +69,11 @@ def plot_change_grid(
 
     varnames = cfg["varnames"]
     var_labels = cfg["labels"]
+
+    # --- load shapefile and subset ---
+    polys = load_climate_division_shapefile()
+    # Dissolve into one multipolygon
+    study_area = polys.dissolve()
 
     # ============================================================
     # Figure setup
@@ -117,9 +127,6 @@ def plot_change_grid(
             season, 
             option
         )
-        
-        lons = fields[0].lon.values
-        lats = fields[0].lat.values
     
         (
             levs_clim,
@@ -140,6 +147,22 @@ def plot_change_grid(
         grid_cols = [0, 3, 4]
 
         for k, gcol in enumerate(grid_cols):
+
+            # prepare for rioxarray
+            da = wrf_prepare_for_rio(fields[k])
+            
+            # Reproject once after reading the raster
+            study_area = study_area.to_crs(da.rio.crs)
+
+            # Clip both datasets to polygon
+            da_clip = da.rio.clip(
+                study_area.geometry,
+                study_area.crs,
+                drop=True
+            )
+            
+            lons = da_clip.lon.values
+            lats = da_clip.lat.values
         
             ax = fig.add_subplot(
                 gs[i, gcol],
@@ -164,7 +187,7 @@ def plot_change_grid(
                 cf = ax.contourf(
                     lons,
                     lats,
-                    fields[k],
+                    da_clip,
                     levels=levs_clim,
                     cmap=cmap_clim,
                     norm=norm_clim,
@@ -180,7 +203,7 @@ def plot_change_grid(
                 cf = ax.contourf(
                     lons,
                     lats,
-                    fields[k],
+                    da_clip,
                     levels=levs_diff,
                     cmap=cmap_diff,
                     norm=norm_diff,

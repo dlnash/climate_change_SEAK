@@ -4,10 +4,20 @@ Author:      Deanna Nash, dnash@ucsd.edu
 Description: Create a map crs for the WRF data
 
 """
+import os
 import xarray as xr
 from pyproj import CRS
 from pathlib import Path
 import globalvars
+import geopandas as gpd
+
+def load_climate_division_shapefile(keep_names = ["Northeast Gulf", "North Panhandle", "Central Panhandle", "South Panhandle"]):
+    # --- load shapefile and subset ---
+    fp = os.path.join(globalvars.path_to_data, 'downloads/AK_climate_divisions/AK_divisions_NAD83.shp')
+    polys = gpd.read_file(fp)
+    polys = polys[polys["Name"].isin(keep_names)]
+
+    return polys
 
 def create_wrf_crs():
     data_path = Path(globalvars.path_to_data) / 'downloads' / 'SEAK-WRF' / 'geo_southeast.nc'

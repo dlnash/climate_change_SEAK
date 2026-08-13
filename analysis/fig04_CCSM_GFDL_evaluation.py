@@ -259,7 +259,7 @@ for i, (ax, model) in enumerate(zip(axes, ["ccsm", "gfdl"])):
     ax.set_ylim(mn-1.5, mx+1.5)
 
     ax.set_title(f" Historical {model.upper()}")
-    ax.set_xlabel("Observed annual 95th percentile (mm day$^{-1}$)")
+    ax.set_xlabel("Observed annual 95th percentile (mm d$^{-1}$)")
 
     # a, b labels
     ax.text(
@@ -270,7 +270,24 @@ for i, (ax, model) in enumerate(zip(axes, ["ccsm", "gfdl"])):
         bbox=bbox_dict
     )
 
-axes[0].set_ylabel("WRF annual 95th percentile (mm day$^{-1}$)")
+axes[0].set_ylabel("WRF annual 95th percentile (mm d$^{-1}$)")
+
+# ---------------------------------------------------------------------
+# Add a, b, c labels
+# ---------------------------------------------------------------------
+import string
+labels = list(string.ascii_lowercase)  # ['a', 'b', 'c', ...]
+bbox_dict = dict(facecolor='white', edgecolor='k', boxstyle='circle,pad=0.3', alpha=1.)
+
+# Loop over axes and labels
+for ax, label in zip(axes, labels):
+    ax.text(
+        0.05, 0.96, label,
+        transform=ax.transAxes,  # position relative to the axes
+        va='top', ha='left',
+        fontsize=12,
+        bbox=bbox_dict
+    )
 
 handles, labels = axes[0].get_legend_handles_labels()
 by_label = dict(zip(labels, handles))
